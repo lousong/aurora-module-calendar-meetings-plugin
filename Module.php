@@ -198,9 +198,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 							$mResult = array(
 								'{{COLOR}}' => $oCalendar->Color,
 								'{{EVENT_NAME}}' => $oEvent[0]['subject'],
-								'{{EVENT_BEGIN}}' => ucfirst(\Aurora\System\Api::ClientI18N('REMINDERS/EVENT_BEGIN')),
+								'{{EVENT_BEGIN}}' => ucfirst($this->i18N('EVENT_BEGIN')),
 								'{{EVENT_DATE}}' => $sDateTime,
-								'{{CALENDAR}}' => ucfirst(\Aurora\System\Api::ClientI18N('REMINDERS/CALENDAR')),
+								'{{CALENDAR}}' => ucfirst($this->i18N('CALENDAR')),
 								'{{CALENDAR_NAME}}' => $oCalendar->DisplayName,
 								'{{EVENT_DESCRIPTION}}' => $oEvent[0]['description'],
 								'{{EVENT_ACTION}}' => $sActionText,

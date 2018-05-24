@@ -145,20 +145,20 @@ class Helper
 		{
 			$sHtml = file_get_contents($oCalendarMeetingsModule->GetPath().'/templates/CalendarEventInvite.html');
 			$sHtml = strtr($sHtml, array(
-				'{{INVITE/LOCATION}}'	=> \Aurora\System\Api::I18N('INVITE/LOCATION'),
-				'{{INVITE/WHEN}}'		=> \Aurora\System\Api::I18N('INVITE/WHEN'),
-				'{{INVITE/DESCRIPTION}}'=> \Aurora\System\Api::I18N('INVITE/DESCRIPTION'),
-				'{{INVITE/INFORMATION}}'=> \Aurora\System\Api::I18N('INVITE/INFORMATION', array('Email' => $sAttendee)),
-				'{{INVITE/ACCEPT}}'		=> \Aurora\System\Api::I18N('INVITE/ACCEPT'),
-				'{{INVITE/TENTATIVE}}'	=> \Aurora\System\Api::I18N('INVITE/TENTATIVE'),
-				'{{INVITE/DECLINE}}'	=> \Aurora\System\Api::I18N('INVITE/DECLINE'),
+				'{{INVITE/LOCATION}}'	=> $oCalendarMeetingsModule->i18N('LOCATION'),
+				'{{INVITE/WHEN}}'		=> $oCalendarMeetingsModule->I18N('WHEN'),
+				'{{INVITE/DESCRIPTION}}'	=> $oCalendarMeetingsModule->i18N('DESCRIPTION'),
+				'{{INVITE/INFORMATION}}'	=> $oCalendarMeetingsModule->i18N('INFORMATION', array('Email' => $sAttendee)),
+				'{{INVITE/ACCEPT}}'		=> $oCalendarMeetingsModule->i18N('ACCEPT'),
+				'{{INVITE/TENTATIVE}}'	=> $oCalendarMeetingsModule->i18N('TENTATIVE'),
+				'{{INVITE/DECLINE}}'		=> $oCalendarMeetingsModule->i18N('DECLINE'),
 				'{{Calendar}}'			=> $sCalendarName.' '.$sAccountEmail,
 				'{{Location}}'			=> $oEvent->Location,
 				'{{Start}}'				=> $sStartDate,
-				'{{Description}}'		=> $oEvent->Description,
-				'{{HrefAccept}}'		=> $sHref.$sEncodedValueAccept,
+				'{{Description}}'			=> $oEvent->Description,
+				'{{HrefAccept}}'			=> $sHref.$sEncodedValueAccept,
 				'{{HrefTentative}}'		=> $sHref.$sEncodedValueTentative,
-				'{{HrefDecline}}'		=> $sHref.$sEncodedValueDecline
+				'{{HrefDecline}}'			=> $sHref.$sEncodedValueDecline
 			));
 		}
 
