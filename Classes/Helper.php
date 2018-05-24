@@ -131,7 +131,7 @@ class Helper
 			'calendarId' => $oEvent->IdCalendar,
 			'eventId' => $oEvent->Id
 		);
-		
+
 		$aValues['action'] = 'ACCEPTED';
 		$sEncodedValueAccept = \Aurora\System\Api::EncodeKeyValues($aValues);
 		$aValues['action'] = 'TENTATIVE';
@@ -140,10 +140,10 @@ class Helper
 		$sEncodedValueDecline = \Aurora\System\Api::EncodeKeyValues($aValues);
 
 		$sHref = rtrim(\MailSo\Base\Http::SingletonInstance()->GetFullUrl(), '\\/ ').'/?invite=';
-		$oCalendarModule = \Aurora\System\Api::GetModule('Calendar');
-		if ($oCalendarModule instanceof \Aurora\System\Module\AbstractModule)
+		$oCalendarMeetingsModule = \Aurora\System\Api::GetModule('CalendarMeetingsPlugin');
+		if ($oCalendarMeetingsModule instanceof \Aurora\System\Module\AbstractModule)
 		{
-			$sHtml = file_get_contents($oCalendarModule->GetPath().'/templates/CalendarEventInvite.html');
+			$sHtml = file_get_contents($oCalendarMeetingsModule->GetPath().'/templates/CalendarEventInvite.html');
 			$sHtml = strtr($sHtml, array(
 				'{{INVITE/LOCATION}}'	=> \Aurora\System\Api::I18N('INVITE/LOCATION'),
 				'{{INVITE/WHEN}}'		=> \Aurora\System\Api::I18N('INVITE/WHEN'),
@@ -161,7 +161,7 @@ class Helper
 				'{{HrefDecline}}'		=> $sHref.$sEncodedValueDecline
 			));
 		}
-		
+
 		return $sHtml;
 	}	
 }
