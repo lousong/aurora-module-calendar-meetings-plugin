@@ -1,0 +1,1 @@
+# aurora-module-calendar-meetings-plugin
