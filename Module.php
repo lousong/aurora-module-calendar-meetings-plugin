@@ -234,6 +234,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $sResult;
 	}
 
+	/**
+	 *
+	 * @return array
+	 */
+	public function GetSettings()
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::Anonymous);
+
+		$aSettings = array(
+			'AllowAppointments' => $this->getConfig('AllowAppointments', true)
+		);
+
+		return $aSettings;
+	}
+
 	public function onCreateIcs($aData, &$oIcs)
 	{
 		$oIcs->Attendee = isset($aData['Attendee']) ? $aData['Attendee'] : null;
