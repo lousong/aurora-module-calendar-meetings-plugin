@@ -479,7 +479,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			foreach($oVEventResult->ATTENDEE as $oAttendee)
 			{
 				$sAttendee = str_replace('mailto:', '', strtolower((string)$oAttendee));
-				if (in_array($sAttendee, $aAccountEmails) && isset($oAttendee['PARTSTAT']))
+				if (in_array($sAttendee, $aAccountEmails) && isset($oAttendee['PARTSTAT']) && $sMethod !== 'SAVE')
 				{
 					$mResult['Attendee'] = $sAttendee;
 					$mResult['Action'] = $sMethod . '-' . $oAttendee['PARTSTAT']->getValue();
