@@ -422,7 +422,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sCalendarId = $aData['sCalendarId'];
 		$sEventId = $aData['sEventId'];
 		$sMethod = $aData['sMethod'];
-		$bUpdateAttendeeStatus = $aData['bUpdateAttendeeStatus'];
 		$sequence = $aData['sequence'];
 		$sequenceServer = $aData['sequenceServer'];
 		$oVEvent = $aData['oVEvent'];
@@ -447,13 +446,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 			}
 		}
-		if ($bUpdateAttendeeStatus)
-		{
-			unset($oVCalResult->METHOD);
-			$oVEventResult->{'LAST-MODIFIED'} = new \DateTime('now', new \DateTimeZone('UTC'));
-			$mResult = $this->oApiCalendarMeetingsPluginManager->oStorage->updateEventRaw($sUserPublicId, $sCalendarId, $sEventId, $oVCalResult->serialize());
-			$oVCalResult->METHOD = $sMethod;
-		}
+		unset($oVCalResult->METHOD);
+		$oVEventResult->{'LAST-MODIFIED'} = new \DateTime('now', new \DateTimeZone('UTC'));
+		$mResult = $this->oApiCalendarMeetingsPluginManager->oStorage->updateEventRaw($sUserPublicId, $sCalendarId, $sEventId, $oVCalResult->serialize());
+		$oVCalResult->METHOD = $sMethod;
 	}
 
 	public function onProcessICSCancel(&$aData, &$mResult)
