@@ -32,7 +32,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$this->subscribeEvent('Calendar::CreateIcs', array($this, 'onCreateIcs'));
 		$this->subscribeEvent('Calendar::populateVCalendar', array($this, 'onPopulateVCalendar'));
-		$this->subscribeEvent('Calendar::deleteEvent', array($this, 'onDeleteEvent'));
+		$this->subscribeEvent('Calendar::DeleteEvent', array($this, 'onDeleteEvent'));
 		$this->subscribeEvent('Calendar::UpdateEventAttendees', array($this, 'onUpdateEventAttendees'));
 		$this->subscribeEvent('CalendarMeetingsPlugin::processICS::UpdateEvent', array($this, 'onProcessICSUpdateEvent'));
 		$this->subscribeEvent('CalendarMeetingsPlugin::processICS::Cancel', array($this, 'onProcessICSCancel'));
