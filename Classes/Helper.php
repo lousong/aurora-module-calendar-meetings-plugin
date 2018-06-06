@@ -163,5 +163,141 @@ class Helper
 		}
 
 		return $sHtml;
-	}	
+	}
+
+	/**
+	 * @param string $sUserPublicId
+	 * @param string $sTo
+	 * @param string $sSubject
+	 * @param string $sHtmlBody
+	 *
+	 * @throws \Aurora\System\Exceptions\ApiException
+	 *
+	 * @return \MailSo\Mime\Message
+	 */
+	public static function sendSelfNotificationMessage($sUserPublicId, $sTo, $sSubject, $sHtmlBody)
+	{
+		$oMessage = self::buildSelfNotificationMessage($sUserPublicId, $sTo, $sSubject, $sHtmlBody);
+		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
+		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
+		{
+			$oAccount = \Aurora\System\Api::GetModule('Mail')->oApiAccountsManager->getAccountByEmail($oUser->PublicId);
+			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
+			{
+				try
+				{
+					\Aurora\System\Api::Log('IcsAppointmentActionSendSelfMailMessage');
+					return \Aurora\System\Api::GetModule('Mail')->oApiMailManager->sendMessage($oAccount, $oMessage);
+				}
+				catch (\Aurora\System\Exceptions\ManagerException $oException)
+				{
+					$iCode = \Core\Notifications::CanNotSendMessage;
+					switch ($oException->getCode())
+					{
+						case Errs::Mail_InvalidRecipients:
+							$iCode = \Core\Notifications::InvalidRecipients;
+							break;
+					}
+
+					throw new \Aurora\System\Exceptions\ApiException($iCode, $oException);
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param string $sUserPublicId
+	 * @param string $sTo
+	 * @param string $sSubject
+	 * @param string $sHtmlBody
+	 *
+	 * @return \MailSo\Mime\Message
+	 */
+	public static function buildSelfNotificationMessage($sUserPublicId, $sTo, $sSubject, $sHtmlBody)
+	{
+		$oMessage = null;
+		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
+		if ($oUser instanceof \Aurora\Modules\Core\Classes\User && !empty($sTo) && !empty($sHtmlBody))
+		{
+			$oMessage = \MailSo\Mime\Message::NewInstance();
+			$oMessage->RegenerateMessageId();
+			$oMessage->DoesNotCreateEmptyTextPart();
+
+			$oMailModule = \Aurora\System\Api::GetModule('Mail');
+			$sXMailer = $oMailModule ? $oMailModule->getConfig('XMailerValue', '') : '';
+			if (0 < strlen($sXMailer))
+			{
+				$oMessage->SetXMailer($sXMailer);
+			}
+
+			$oMessage
+				->SetFrom(\MailSo\Mime\Email::NewInstance($oUser->PublicId))
+				->SetSubject($sSubject)
+			;
+
+			$oMessage->AddHtml($sHtmlBody);
+
+			$oToEmails = \MailSo\Mime\EmailCollection::NewInstance($sTo);
+			if ($oToEmails && $oToEmails->Count())
+			{
+				$oMessage->SetTo($oToEmails);
+			}
+		}
+
+		return $oMessage;
+	}
+
+	public static function createSelfNotificationSubject($sAction, $sEventName)
+	{
+		$sResult = self::getSelfNotificationActionName($sAction) . ': ' . $sEventName;
+
+		return $sResult;
+	}
+
+	public static function createSelfNotificationHtmlBody($sAction, $aEvent, $sEmail, $sCalendarName, $sStartDate)
+	{
+		$sHtml = '';
+		$sActionName = self::getSelfNotificationActionName($sAction);
+		$oCalendarMeetingsModule = \Aurora\System\Api::GetModule('CalendarMeetingsPlugin');
+		if ($oCalendarMeetingsModule instanceof \Aurora\System\Module\AbstractModule)
+		{
+			$sHtml = file_get_contents($oCalendarMeetingsModule->GetPath().'/templates/CalendarEventSelfNotification.html');
+			$sHtml = strtr($sHtml, [
+				'{{LOCATION}}'			=> $oCalendarMeetingsModule->i18N('LOCATION'),
+				'{{WHEN}}'				=> $oCalendarMeetingsModule->I18N('WHEN'),
+				'{{DESCRIPTION}}'		=> $oCalendarMeetingsModule->i18N('DESCRIPTION'),
+				'{{INFORMATION}}'		=> $oCalendarMeetingsModule->i18N('INFORMATION', ['Email' => $sEmail]),
+				'{{REACTION}}'			=> $oCalendarMeetingsModule->i18N('USER_REACTION'),
+				'{{Calendar}}'			=> $sCalendarName.' '.$sEmail,
+				'{{Location}}'			=> $aEvent['location'],
+				'{{Start}}'				=> $sStartDate,
+				'{{Description}}'			=> $aEvent['description'],
+				'{{Reaction}}'			=> $sActionName
+			]);
+		}
+
+		return $sHtml;
+	}
+
+	public static function getSelfNotificationActionName($sAction)
+	{
+		$sResult = '';
+		$oCalendarMeetingsModule = \Aurora\System\Api::GetModule('CalendarMeetingsPlugin');
+		switch ($sAction)
+		{
+			case 'ACCEPTED':
+				$sResult = $oCalendarMeetingsModule->i18N('ACCEPT');
+				break;
+			case 'DECLINED':
+				$sResult = $oCalendarMeetingsModule->i18N('DECLINE');
+				break;
+			case 'TENTATIVE':
+				$sResult = $oCalendarMeetingsModule->i18N('TENTATIVE');
+				break;
+		}
+
+		return $sResult;
+	}
 }

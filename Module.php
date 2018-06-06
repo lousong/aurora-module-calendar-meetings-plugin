@@ -208,6 +208,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 							);
 
 							$sResult = strtr($sResult, $mResult);
+
+							$sStartDate = $dt->format($oEvent[0]['allDay'] ? 'D, F d, o' : 'D, F d, o, H:i');
+							\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendSelfNotificationMessage(
+								$aInviteValues['attendee'],
+								$aInviteValues['attendee'],
+								\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createSelfNotificationSubject($aInviteValues['action'], $oEvent[0]['subject']),
+								\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createSelfNotificationHtmlBody($aInviteValues['action'], $oEvent[0], $aInviteValues['attendee'], $oCalendar->DisplayName, $sStartDate)
+							);
 						}
 						else
 						{
