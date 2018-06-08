@@ -196,7 +196,9 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 
 				if (strtoupper($sMethodOriginal) == 'REQUEST'/* && (strtoupper($sAction) !== 'DECLINED')*/)
 				{
-					if (!empty($sTo) && !empty($sBody) && isset($oDefaultUser) && $oDefaultUser instanceof \Aurora\Modules\Core\Classes\User)
+					if (!empty($sTo) && !empty($sBody) && isset($oDefaultUser) && $oDefaultUser instanceof \Aurora\Modules\Core\Classes\User &&
+						$oDefaultUser->PublicId !== $sTo//don't sending message to user from himself
+					)
 					{
 						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod);
 					}
