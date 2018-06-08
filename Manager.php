@@ -183,7 +183,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 					unset($oVCal->METHOD);
 					if (isset($oDefaultUser))
 					{
-						if (strtoupper($sAction) == 'DECLINED' || strtoupper($sMethod) == 'CANCEL')
+						if ($sUserPublicId === $sAttendee && strtoupper($sAction) == 'DECLINED' || strtoupper($sMethod) == 'CANCEL')
 						{
 							$this->deleteEvent($oDefaultUser->PublicId, $sCalendarId, $sEventId);
 						}
