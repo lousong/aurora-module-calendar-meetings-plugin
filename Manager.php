@@ -88,6 +88,20 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 				$bDefaultAccountAsEmail = true;
 			}
 		}
+		$oFromAccount = null;
+		if ($oDefaultUser && $oDefaultUser->PublicId !== $sAttendee)
+		{
+			$aUserAccounts = \Aurora\System\Api::GetModuleDecorator('Mail')->GetAccounts($oDefaultUser->EntityId);
+			foreach ($aUserAccounts as $oMailAccount)
+			{
+				if ($oMailAccount instanceof \Aurora\Modules\Mail\Classes\Account && $oMailAccount->Email === $sAttendee)
+				{
+					$oFromAccount = $oMailAccount;
+					break;
+				}
+			}
+		}
+
 		if (!$bDefaultAccountAsEmail && !$bIsDefaultAccount)
 		{
 			$oCalendar = $this->getDefaultCalendar($oDefaultUser->PublicId);
@@ -200,7 +214,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 						$oDefaultUser->PublicId !== $sTo//don't sending message to user from himself
 					)
 					{
-						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod);
+						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod, '', $oFromAccount);
 					}
 				}
 				else
