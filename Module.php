@@ -273,103 +273,111 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$aAttendees = [];
 		$aAttendeeEmails = [];
 		$aObjAttendees = [];
-		if (isset($oVEvent->ATTENDEE))
+		if (isset($oVEvent->ORGANIZER))
 		{
-			$aAttendeeEmails = [];
-			foreach ($oEvent->Attendees as $aItem)
+			$sOwnerEmail = str_replace('mailto:', '', strtolower((string) $oVEvent->ORGANIZER));
+		}
+		//update only own attendees
+		if (!isset($sOwnerEmail) || isset($sOwnerEmail) && $sOwnerEmail === $sUserPublicId)
+		{
+			if (isset($oVEvent->ATTENDEE))
 			{
-				$sStatus = '';
-				switch ($aItem['status'])
+				$aAttendeeEmails = [];
+				foreach ($oEvent->Attendees as $aItem)
 				{
-					case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Accepted:
-						$sStatus = 'ACCEPTED';
-						break;
-					case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Declined:
-						$sStatus = 'DECLINED';
-						break;
-					case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Tentative:
-						$sStatus = 'TENTATIVE';
-						break;
-					case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Unknown:
-						$sStatus = 'NEEDS-ACTION';
-						break;
+					$sStatus = '';
+					switch ($aItem['status'])
+					{
+						case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Accepted:
+							$sStatus = 'ACCEPTED';
+							break;
+						case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Declined:
+							$sStatus = 'DECLINED';
+							break;
+						case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Tentative:
+							$sStatus = 'TENTATIVE';
+							break;
+						case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Unknown:
+							$sStatus = 'NEEDS-ACTION';
+							break;
+					}
+
+					$aAttendeeEmails[strtolower($aItem['email'])] = $sStatus;
 				}
 
-				$aAttendeeEmails[strtolower($aItem['email'])] = $sStatus;
-			}
-
-			$aObjAttendees = $oVEvent->ATTENDEE;
-			unset($oVEvent->ATTENDEE);
-			foreach($aObjAttendees as $oAttendee)
-			{
-				$sAttendee = str_replace('mailto:', '', strtolower((string)$oAttendee));
-				$oPartstat = $oAttendee->offsetGet('PARTSTAT');
-				if (in_array($sAttendee, array_keys($aAttendeeEmails)))
+				$aObjAttendees = $oVEvent->ATTENDEE;
+				unset($oVEvent->ATTENDEE);
+				foreach($aObjAttendees as $oAttendee)
 				{
-					if (isset($oPartstat) && (string)$oPartstat === $aAttendeeEmails[$sAttendee])
+					$sAttendee = str_replace('mailto:', '', strtolower((string)$oAttendee));
+					$oPartstat = $oAttendee->offsetGet('PARTSTAT');
+					if (in_array($sAttendee, array_keys($aAttendeeEmails)))
 					{
-						$oVEvent->add($oAttendee);
-						$aAttendees[] = $sAttendee;
+						if (isset($oPartstat) && (string)$oPartstat === $aAttendeeEmails[$sAttendee])
+						{
+							$oVEvent->add($oAttendee);
+							$aAttendees[] = $sAttendee;
+						}
+					}
+					else
+					{
+						if (!isset($oPartstat) || (isset($oPartstat) && (string)$oPartstat != 'DECLINED'))
+						{
+							$oVCal->METHOD = 'CANCEL';
+							$sSubject = (string)$oVEvent->SUMMARY . ': Canceled';
+							\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($sUserPublicId, $sAttendee, $sSubject, $oVCal->serialize(), (string)$oVCal->METHOD);
+							unset($oVCal->METHOD);
+						}
 					}
 				}
-				else
+			}
+
+			if (count($oEvent->Attendees) > 0)
+			{
+				if (!isset($oVEvent->ORGANIZER))
 				{
-					if (!isset($oPartstat) || (isset($oPartstat) && (string)$oPartstat != 'DECLINED'))
+					$oVEvent->ORGANIZER = 'mailto:' . $oUser->PublicId;
+				}
+				foreach($oEvent->Attendees as $oAttendee)
+				{
+					if (!in_array($oAttendee['email'], $aAttendees))
 					{
-						$oVCal->METHOD = 'CANCEL';
-						$sSubject = (string)$oVEvent->SUMMARY . ': Canceled';
-						\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($sUserPublicId, $sAttendee, $sSubject, $oVCal->serialize(), (string)$oVCal->METHOD);
+						$oVEvent->add(
+							'ATTENDEE',
+							'mailto:' . $oAttendee['email'],
+							array(
+								'CN' => !empty($oAttendee['name']) ? $oAttendee['name'] : $oAttendee['email'],
+								'RSVP' => 'TRUE'
+							)
+						);
+					}
+				}
+			}
+			else
+			{
+				unset($oVEvent->ORGANIZER);
+			}
+
+			if (isset($oVEvent->ATTENDEE))
+			{
+				foreach($oVEvent->ATTENDEE as $oAttendee)
+				{
+					$sAttendee = str_replace('mailto:', '', strtolower((string)$oAttendee));
+
+					if (($sAttendee !==  $oUser->PublicId) &&
+						(!isset($oAttendee['PARTSTAT']) || (isset($oAttendee['PARTSTAT']) && (string)$oAttendee['PARTSTAT'] !== 'DECLINED')))
+					{
+						$sStartDateFormat = $oVEvent->DTSTART->hasTime() ? 'D, F d, o, H:i' : 'D, F d, o';
+						$sStartDate = \Aurora\Modules\Calendar\Classes\Helper::getStrDate($oVEvent->DTSTART, $oUser->DefaultTimeZone, $sStartDateFormat);
+
+						$oCalendar = \Aurora\System\Api::GetModule('Calendar')->GetCalendar($sUserPublicId, $oEvent->IdCalendar);
+
+						$sHtml = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createHtmlFromEvent($oEvent, $oUser->PublicId, $sAttendee, $oCalendar->DisplayName, $sStartDate);
+
+						$oVCal->METHOD = 'REQUEST';
+						\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($sUserPublicId, $sAttendee, (string)$oVEvent->SUMMARY, $oVCal->serialize(), (string)$oVCal->METHOD, $sHtml);
 						unset($oVCal->METHOD);
 					}
-				}
-			}
-		}
-
-		if (count($oEvent->Attendees) > 0)
-		{
-			if (!isset($oVEvent->ORGANIZER))
-			{
-				$oVEvent->ORGANIZER = 'mailto:' . $oUser->PublicId;
-			}
-			foreach($oEvent->Attendees as $oAttendee)
-			{
-				if (!in_array($oAttendee['email'], $aAttendees))
-				{
-					$oVEvent->add(
-						'ATTENDEE',
-						'mailto:' . $oAttendee['email'],
-						array(
-							'CN' => !empty($oAttendee['name']) ? $oAttendee['name'] : $oAttendee['email'],
-							'RSVP' => 'TRUE'
-						)
-					);
-				}
-			}
-		}
-		else
-		{
-			unset($oVEvent->ORGANIZER);
-		}
-
-		if (isset($oVEvent->ATTENDEE))
-		{
-			foreach($oVEvent->ATTENDEE as $oAttendee)
-			{
-				$sAttendee = str_replace('mailto:', '', strtolower((string)$oAttendee));
-
-				if (($sAttendee !==  $oUser->PublicId) &&
-					(!isset($oAttendee['PARTSTAT']) || (isset($oAttendee['PARTSTAT']) && (string)$oAttendee['PARTSTAT'] !== 'DECLINED')))
-				{
-					$sStartDateFormat = $oVEvent->DTSTART->hasTime() ? 'D, F d, o, H:i' : 'D, F d, o';
-					$sStartDate = \Aurora\Modules\Calendar\Classes\Helper::getStrDate($oVEvent->DTSTART, $oUser->DefaultTimeZone, $sStartDateFormat);
-
-					$oCalendar = \Aurora\System\Api::GetModule('Calendar')->GetCalendar($sUserPublicId, $oEvent->IdCalendar);
-
-					$sHtml = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createHtmlFromEvent($oEvent, $oUser->PublicId, $sAttendee, $oCalendar->DisplayName, $sStartDate);
-
-					$oVCal->METHOD = 'REQUEST';
-					\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($sUserPublicId, $sAttendee, (string)$oVEvent->SUMMARY, $oVCal->serialize(), (string)$oVCal->METHOD, $sHtml);
-					unset($oVCal->METHOD);
 				}
 			}
 		}
@@ -419,7 +427,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public function onUpdateEventAttendees($aData, &$oEvent)
 	{
 		$attendees = $aData['attendees'];
-		$oEvent->Attendees = @json_decode($attendees, true);
+		$owner = isset($aData['owner']) ? $aData['owner'] : '';
+		$UserPublicId = isset($aData['UserPublicId']) ? $aData['UserPublicId'] : '';
+		if ($owner && $UserPublicId && $owner === $UserPublicId)
+		{
+			$oEvent->Attendees = @json_decode($attendees, true);
+		}
 	}
 
 	public function onProcessICSUpdateEvent(&$aData, &$mResult)
