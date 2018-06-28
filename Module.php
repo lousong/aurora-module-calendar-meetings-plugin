@@ -446,21 +446,30 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sequence = $aData['sequence'];
 		$sequenceServer = $aData['sequenceServer'];
 		$oVEvent = $aData['oVEvent'];
+		$mFromEmail = $aData['mFromEmail'];
 
 		if (isset($oVEvent->ATTENDEE) && $sequenceServer >= $sequence)
 		{
-			$oAttendee = $oVEvent->ATTENDEE[0];
-			$sAttendee = str_replace('mailto:', '', strtolower((string)$oAttendee));
+			foreach ($oVEvent->ATTENDEE as $oAttendee)
+			{
+				if ($mFromEmail && $mFromEmail === str_replace('mailto:', '', strtolower((string) $oAttendee->getValue())))
+				{
+					$oCurrentAttendee = $oAttendee;
+					break;
+				}
+			}
 			if (isset($oVEventResult->ATTENDEE))
 			{
 				foreach ($oVEventResult->ATTENDEE as &$oAttendeeResult)
 				{
-					$sEmailResult = str_replace('mailto:', '', strtolower((string)$oAttendeeResult));
-					if ($sEmailResult === $sAttendee)
+					if ($oAttendeeResult->getValue() === $oAttendee->getValue())
 					{
-						if (isset($oAttendee['PARTSTAT']))
+						if (isset($oCurrentAttendee['PARTSTAT']))
 						{
-							$oAttendeeResult['PARTSTAT'] = $oAttendee['PARTSTAT']->getValue();
+							$oAttendeeResult['PARTSTAT'] = $oCurrentAttendee['PARTSTAT']->getValue();
+							$oRespondedAt = $oVEvent->{'LAST-MODIFIED'}->getDateTime();
+							$oRespondedAt->setTimezone(new \DateTimeZone('UTC'));
+							$oAttendeeResult['RESPONDED-AT'] = gmdate("Ymd\THis\Z", $oRespondedAt->getTimestamp());
 						}
 						break;
 					}
@@ -469,7 +478,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		unset($oVCalResult->METHOD);
 		$oVEventResult->{'LAST-MODIFIED'} = new \DateTime('now', new \DateTimeZone('UTC'));
-		$mResult = $this->oApiCalendarMeetingsPluginManager->oStorage->updateEventRaw($sUserPublicId, $sCalendarId, $sEventId, $oVCalResult->serialize());
+		$mResult = $this->oApiCalendarMeetingsPluginManager->updateEventRaw($sUserPublicId, $sCalendarId, $sEventId, $oVCalResult->serialize());
 		$oVCalResult->METHOD = $sMethod;
 	}
 
