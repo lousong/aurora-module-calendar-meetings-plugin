@@ -39,6 +39,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->subscribeEvent('Calendar::processICS::UpdateEvent', array($this, 'onProcessICSUpdateEvent'));
 		$this->subscribeEvent('Calendar::processICS::Cancel', array($this, 'onProcessICSCancel'));
 		$this->subscribeEvent('Calendar::processICS::AddAttendeesToResult', array($this, 'onAddAttendeesToResult'));
+		$this->subscribeEvent('Calendar::parseEvent', array($this, 'onParseEvent'));
 	}
 
 	/**
@@ -512,5 +513,28 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 			}
 		}
+	}
+
+	public function onParseEvent(&$aData, &$aEvent)
+	{
+		$oVComponent = $aData['oVComponent'];
+		$sOwnerEmail = $aData['sOwnerEmail'];
+		$oUser = $aData['oUser'];
+
+		$bIsAppointment = false;
+		$aEvent['attendees'] = array();
+		if (isset($oVComponent->ATTENDEE))
+		{
+			$aEvent['attendees'] = \Aurora\Modules\Calendar\Classes\Parser::parseAttendees($oVComponent);
+
+			if (isset($oVComponent->ORGANIZER))
+			{
+				$sOwnerEmail = str_replace('mailto:', '', strtolower((string)$oVComponent->ORGANIZER));
+			}
+			$bIsAppointment = ($oUser instanceof \Aurora\Modules\Core\Classes\User && $sOwnerEmail !== $oUser->PublicId);
+		}
+
+		$aEvent['appointment'] = $bIsAppointment;
+		$aEvent['appointmentAccess'] = 0;
 	}
 }
