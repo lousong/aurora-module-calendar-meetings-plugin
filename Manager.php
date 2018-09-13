@@ -91,13 +91,20 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 		$oFromAccount = null;
 		if ($oDefaultUser && $oDefaultUser->PublicId !== $sAttendee)
 		{
-			$aUserAccounts = \Aurora\System\Api::GetModuleDecorator('Mail')->GetAccounts($oDefaultUser->EntityId);
-			foreach ($aUserAccounts as $oMailAccount)
+			$oMailModule = \Aurora\System\Api::GetModule('Mail');
+			if ($oMailModule)
 			{
-				if ($oMailAccount instanceof \Aurora\Modules\Mail\Classes\Account && $oMailAccount->Email === $sAttendee)
+				$aAccounts = $oMailModule->oApiAccountsManager->getUserAccounts($oDefaultUser->EntityId);
+				if (is_array($aAccounts))
 				{
-					$oFromAccount = $oMailAccount;
-					break;
+					foreach ($aAccounts as $oAccount)
+					{
+						if ($oAccount instanceof \Aurora\Modules\Mail\Classes\Account && $oAccount->Email === $sAttendee)
+						{
+							$oFromAccount = $oAccount;
+							break;
+						}
+					}
 				}
 			}
 		}
