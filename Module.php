@@ -60,7 +60,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		{
 			throw new \Aurora\System\Exceptions\ApiException(\Aurora\System\Notifications::InvalidInputParameter);
 		}
-		$sData = $this->oApiFileCache->get($sUserPublicId, $File, '', $this->oApiCalendarDecorator::GetName());
+		$sData = $this->oApiFileCache->get($sUserPublicId, $File, '', \Aurora\Modules\Calendar\Module::GetName());
 		if (!empty($sData))
 		{
 			$mResult = $this->oApiCalendarMeetingsPluginManager->processICS($sUserPublicId, $sData, $FromEmail, true);
@@ -103,7 +103,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		else if (!empty($File))
 		{
-			$sData = $this->oApiFileCache->get($sUserPublicId, $File, '', $this->oApiCalendarDecorator::GetName());
+			$sData = $this->oApiFileCache->get($sUserPublicId, $File, '', \Aurora\Modules\Calendar\Module::GetName());
 		}
 		if (!empty($sData))
 		{
