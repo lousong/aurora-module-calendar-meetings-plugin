@@ -14,18 +14,33 @@ namespace Aurora\Modules\CalendarMeetingsPlugin;
  */
 class Module extends \Aurora\System\Module\AbstractModule
 {
-	public $oApiCalendarMeetingsPluginManager = null;
+	protected $oManager = null;
 	public $oApiFileCache = null;
-	public $oApiCalendarDecorator = null;
-	public $oApiUsersManager = null;
+//	public $oApiCalendarDecorator = null;
+//	public $oApiUsersManager = null;
+
+	public function getManager()
+	{
+		if ($this->oManager === null)
+		{
+			$this->oManager = new Manager($this);
+		}
+
+		return $this->oManager;
+	}
+
+	public function getCacheManager()
+	{
+		if ($this->oApiFileCache === null)
+		{
+			$this->oApiFileCache = new \Aurora\System\Managers\Filecache();
+		}
+
+		return $this->oApiFileCache;
+	}
 
 	public function init()
 	{
-		$this->oApiCalendarDecorator = \Aurora\System\Api::GetModuleDecorator('Calendar');
-		$this->oApiCalendarMeetingsPluginManager = new Manager($this);
-		$this->oApiFileCache = new \Aurora\System\Managers\Filecache();
-		$this->oApiUsersManager = \Aurora\System\Api::GetModule('Core')->oApiUsersManager;
-
 		$this->AddEntries([
 			'invite' => 'EntryInvite'
 		]);
@@ -60,10 +75,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 		{
 			throw new \Aurora\System\Exceptions\ApiException(\Aurora\System\Notifications::InvalidInputParameter);
 		}
-		$sData = $this->oApiFileCache->get($sUserPublicId, $File, '', \Aurora\Modules\Calendar\Module::GetName());
+		$sData = $this->getCacheManager()->get($sUserPublicId, $File, '', \Aurora\Modules\Calendar\Module::GetName());
 		if (!empty($sData))
 		{
-			$mResult = $this->oApiCalendarMeetingsPluginManager->processICS($sUserPublicId, $sData, $FromEmail, true);
+			$mResult = $this->getManager()->processICS($sUserPublicId, $sData, $FromEmail, true);
 		}
 
 		return $mResult;
@@ -93,7 +108,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sData = '';
 		if (!empty($EventId))
 		{
-			$aEventData =  $this->oApiCalendarMeetingsPluginManager->getEvent($sUserPublicId, $CalendarId, $EventId);
+			$aEventData =  $this->getManager()->getEvent($sUserPublicId, $CalendarId, $EventId);
 			if (isset($aEventData) && isset($aEventData['vcal']) && $aEventData['vcal'] instanceof \Sabre\VObject\Component\VCalendar)
 			{
 				$oVCal = $aEventData['vcal'];
@@ -103,11 +118,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		else if (!empty($File))
 		{
-			$sData = $this->oApiFileCache->get($sUserPublicId, $File, '', \Aurora\Modules\Calendar\Module::GetName());
+			$sData = $this->getCacheManager()->get($sUserPublicId, $File, '', \Aurora\Modules\Calendar\Module::GetName());
 		}
 		if (!empty($sData))
 		{
-			$mProcessResult = $this->oApiCalendarMeetingsPluginManager->appointmentAction($sUserPublicId, $Attendee, $AppointmentAction, $CalendarId, $sData);
+			$mProcessResult = $this->getManager()->appointmentAction($sUserPublicId, $Attendee, $AppointmentAction, $CalendarId, $sData);
 			if ($mProcessResult)
 			{
 				$mResult = array(
@@ -130,10 +145,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$oOrganizerUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sOrganizerPublicId);
 			if (isset($sOrganizerPublicId, $aInviteValues['attendee'], $aInviteValues['calendarId'], $aInviteValues['eventId'], $aInviteValues['action']))
 			{
-				$oCalendar = $this->oApiCalendarMeetingsPluginManager->getCalendar($sOrganizerPublicId, $aInviteValues['calendarId']);
+				$oCalendar = $this->getManager()->getCalendar($sOrganizerPublicId, $aInviteValues['calendarId']);
 				if ($oCalendar)
 				{
-					$oEvent = $this->oApiCalendarMeetingsPluginManager->getEvent($sOrganizerPublicId, $aInviteValues['calendarId'], $aInviteValues['eventId']);
+					$oEvent = $this->getManager()->getEvent($sOrganizerPublicId, $aInviteValues['calendarId'], $aInviteValues['eventId']);
 					if ($oEvent && is_array($oEvent) && 0 < count ($oEvent) && isset($oEvent[0]))
 					{
 						if (is_string($sResult))
@@ -235,7 +250,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$sAttendee = $aInviteValues['attendee'];
 				if (!empty($sAttendee))
 				{
-					$this->oApiCalendarMeetingsPluginManager->updateAppointment($sOrganizerPublicId, $aInviteValues['calendarId'], $aInviteValues['eventId'], $sAttendee, $aInviteValues['action']);
+					$this->getManager()->updateAppointment($sOrganizerPublicId, $aInviteValues['calendarId'], $aInviteValues['eventId'], $sAttendee, $aInviteValues['action']);
 				}
 			}
 		}
@@ -479,7 +494,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		unset($oVCalResult->METHOD);
 		$oVEventResult->{'LAST-MODIFIED'} = new \DateTime('now', new \DateTimeZone('UTC'));
-		$mResult = $this->oApiCalendarMeetingsPluginManager->updateEventRaw($sUserPublicId, $sCalendarId, $sEventId, $oVCalResult->serialize());
+		$mResult = $this->getManager()->updateEventRaw($sUserPublicId, $sCalendarId, $sEventId, $oVCalResult->serialize());
 		$oVCalResult->METHOD = $sMethod;
 	}
 
@@ -489,7 +504,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sUserPublicId = $aData['sUserPublicId'];
 		$sEventId = $aData['sEventId'];
 
-		if ($this->oApiCalendarMeetingsPluginManager->deleteEvent($sUserPublicId, $sCalendarId, $sEventId))
+		if ($this->getManager()->deleteEvent($sUserPublicId, $sCalendarId, $sEventId))
 		{
 			$mResult = true;
 		}

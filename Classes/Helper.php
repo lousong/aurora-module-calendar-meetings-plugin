@@ -35,13 +35,13 @@ class Helper
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
-			$oAccount = $oAccount ? $oAccount : \Aurora\System\Api::GetModule('Mail')->oApiAccountsManager->getAccountByEmail($oUser->PublicId);
+			$oAccount = $oAccount ? $oAccount : \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountByEmail($oUser->PublicId);
 			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
 			{
 				try
 				{
 					\Aurora\System\Api::Log('IcsAppointmentActionSendOriginalMailMessage');
-					return \Aurora\System\Api::GetModule('Mail')->oApiMailManager->sendMessage($oAccount, $oMessage);
+					return \Aurora\System\Api::GetModule('Mail')->getMailManager()->sendMessage($oAccount, $oMessage);
 				}
 				catch (\Aurora\System\Exceptions\ManagerException $oException)
 				{
@@ -182,13 +182,13 @@ class Helper
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
-			$oAccount = \Aurora\System\Api::GetModule('Mail')->oApiAccountsManager->getAccountByEmail($oUser->PublicId);
+			$oAccount = \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountByEmail($oUser->PublicId);
 			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
 			{
 				try
 				{
 					\Aurora\System\Api::Log('IcsAppointmentActionSendSelfMailMessage');
-					return \Aurora\System\Api::GetModule('Mail')->oApiMailManager->sendMessage($oAccount, $oMessage);
+					return \Aurora\System\Api::GetModule('Mail')->getMailManager()->sendMessage($oAccount, $oMessage);
 				}
 				catch (\Aurora\System\Exceptions\ManagerException $oException)
 				{

@@ -72,12 +72,12 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 		if (isset($sUserPublicId))
 		{
 			$bDefaultAccountAsEmail = false;
-			$oUser = $this->oApiUsersManager->GetUserByPublicId($sUserPublicId);
+			$oUser = $this->getUsersManager()->GetUserByPublicId($sUserPublicId);
 			$oDefaultUser = $oUser;
 		}
 		else
 		{
-			$oAttendeeUser = $this->oApiUsersManager->getUserByPublicId($sAttendee);
+			$oAttendeeUser = $this->getUsersManager()->getUserByPublicId($sAttendee);
 			if ($oAttendeeUser instanceof \Aurora\Modules\Core\Classes\User)
 			{
 				$bDefaultAccountAsEmail = false;
@@ -94,7 +94,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 			$oMailModule = \Aurora\System\Api::GetModule('Mail');
 			if ($oMailModule)
 			{
-				$aAccounts = $oMailModule->oApiAccountsManager->getUserAccounts($oDefaultUser->EntityId);
+				$aAccounts = $oMailModule->getAccountsManager()->getUserAccounts($oDefaultUser->EntityId);
 				if (is_array($aAccounts))
 				{
 					foreach ($aAccounts as $oAccount)
