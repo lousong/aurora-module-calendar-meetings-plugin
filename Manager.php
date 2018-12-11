@@ -72,12 +72,12 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 		if (isset($sUserPublicId))
 		{
 			$bDefaultAccountAsEmail = false;
-			$oUser = $this->getUsersManager()->GetUserByPublicId($sUserPublicId);
+			$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
 			$oDefaultUser = $oUser;
 		}
 		else
 		{
-			$oAttendeeUser = $this->getUsersManager()->getUserByPublicId($sAttendee);
+			$oAttendeeUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sAttendee);
 			if ($oAttendeeUser instanceof \Aurora\Modules\Core\Classes\User)
 			{
 				$bDefaultAccountAsEmail = false;
