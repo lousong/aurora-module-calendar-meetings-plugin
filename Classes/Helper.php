@@ -37,7 +37,7 @@ class Helper
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
-			$oAccount = $oAccount ? $oAccount : \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountByEmail($oUser->PublicId);
+			$oAccount = $oAccount ? $oAccount : \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountUsedToAuthorize($oUser->PublicId);
 			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
 			{
 				try
@@ -184,7 +184,7 @@ class Helper
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
-			$oAccount = \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountByEmail($oUser->PublicId);
+			$oAccount = \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountUsedToAuthorize($oUser->PublicId);
 			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
 			{
 				try
