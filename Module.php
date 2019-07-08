@@ -60,7 +60,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 	}
 
 	/**
-	 * не используется?
 	 * @param int $UserId
 	 * @param string $File
 	 * @param string $FromEmail
