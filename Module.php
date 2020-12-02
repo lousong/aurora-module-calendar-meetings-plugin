@@ -546,6 +546,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 			if (isset($oVComponent->ORGANIZER))
 			{
 				$sOwnerEmail = str_replace('mailto:', '', strtolower((string)$oVComponent->ORGANIZER));
+				if (\strncmp($sOwnerEmail, "/principals/", 12) === 0)
+				{
+					$sOwnerEmail = \substr($sOwnerEmail, 12, -1);
+				}
 				$aData['sOwnerEmail'] = $sOwnerEmail;
 			}
 			$bIsAppointment = ($oUser instanceof \Aurora\Modules\Core\Classes\User && $sOwnerEmail !== $oUser->PublicId);
