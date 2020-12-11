@@ -293,6 +293,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if (isset($oVEvent->ORGANIZER))
 		{
 			$sOwnerEmail = str_replace('mailto:', '', strtolower((string) $oVEvent->ORGANIZER));
+			$iPos = strpos($sOwnerEmail, 'principals/');
+			if ($iPos !== false)
+			{
+				$sOwnerEmail = \trim(substr($sOwnerEmail, $iPos + 11), '/');
+			}
 		}
 		//update only own attendees
 		if (!isset($sOwnerEmail) || isset($sOwnerEmail) && $sOwnerEmail === $sUserPublicId)
@@ -411,6 +416,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 			$sOrganizer = (isset($oVEvent->ORGANIZER)) ?
 					str_replace('mailto:', '', strtolower((string)$oVEvent->ORGANIZER)) : null;
+			$iPos = strpos($sOrganizer, 'principals/');
+			if ($iPos !== false)
+			{
+				$sOrganizer = \trim(substr($sOrganizer, $iPos + 11), '/');
+			}
 
 			if (isset($sOrganizer))
 			{
@@ -546,9 +556,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 			if (isset($oVComponent->ORGANIZER))
 			{
 				$sOwnerEmail = str_replace('mailto:', '', strtolower((string)$oVComponent->ORGANIZER));
-				if (\strncmp($sOwnerEmail, "/principals/", 12) === 0)
+				$iPos = strpos($sOwnerEmail, 'principals/');
+				if ($iPos !== false)
 				{
-					$sOwnerEmail = \substr($sOwnerEmail, 12, -1);
+					$sOwnerEmail = \trim(substr($sOwnerEmail, $iPos + 11), '/');
 				}
 				$aData['sOwnerEmail'] = $sOwnerEmail;
 			}

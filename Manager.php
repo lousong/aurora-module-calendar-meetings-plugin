@@ -137,6 +137,11 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 				if (isset($oVEvent->ORGANIZER))
 				{
 					$sTo = str_replace('mailto:', '', strtolower((string)$oVEvent->ORGANIZER));
+					$iPos = strpos($sTo, 'principals/');
+					if ($iPos !== false)
+					{
+						$sTo = \trim(substr($sTo, $iPos + 11), '/');
+					}
 				}
 				if (strtoupper($sMethod) === 'REQUEST')
 				{
