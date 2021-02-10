@@ -10,7 +10,7 @@ namespace Aurora\Modules\CalendarMeetingsPlugin;
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
  * @license https://afterlogic.com/products/common-licensing Afterlogic Software License
- * @copyright Copyright (c) 2019, Afterlogic Corp.
+ * @copyright Copyright (c) 2021, Afterlogic Corp.
  */
 class Manager extends \Aurora\Modules\Calendar\Manager
 {
@@ -219,11 +219,19 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 
 				if (strtoupper($sMethodOriginal) == 'REQUEST'/* && (strtoupper($sAction) !== 'DECLINED')*/)
 				{
-					if (!empty($sTo) && !empty($sBody) && isset($oDefaultUser) && $oDefaultUser instanceof \Aurora\Modules\Core\Classes\User &&
+					if (empty($sTo))
+					{
+						throw new \Aurora\Modules\CalendarMeetingsPlugin\Exceptions\Exception(\Aurora\Modules\CalendarMeetingsPlugin\Enums\ErrorCodes::CannotSendAppointmentMessageNoOrganizer);
+					}
+					else if (!empty($sBody) && isset($oDefaultUser) && $oDefaultUser instanceof \Aurora\Modules\Core\Classes\User &&
 						$oDefaultUser->PublicId !== $sTo//don't sending message to user from himself
 					)
 					{
 						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod, '', $oFromAccount);
+					}
+					else
+					{
+						throw new \Aurora\Modules\CalendarMeetingsPlugin\Exceptions\Exception(\Aurora\Modules\CalendarMeetingsPlugin\Enums\ErrorCodes::CannotSendAppointmentMessage);
 					}
 				}
 				else

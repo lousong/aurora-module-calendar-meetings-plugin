@@ -10,7 +10,7 @@ namespace Aurora\Modules\CalendarMeetingsPlugin;
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
  * @license https://afterlogic.com/products/common-licensing Afterlogic Software License
- * @copyright Copyright (c) 2019, Afterlogic Corp.
+ * @copyright Copyright (c) 2021, Afterlogic Corp.
  *
  * @package Modules
  */
@@ -57,6 +57,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->subscribeEvent('Calendar::processICS::Cancel', array($this, 'onProcessICSCancel'));
 		$this->subscribeEvent('Calendar::processICS::AddAttendeesToResult', array($this, 'onAddAttendeesToResult'));
 		$this->subscribeEvent('Calendar::parseEvent', array($this, 'onParseEvent'));
+
+		$this->aErrors = [
+			Enums\ErrorCodes::CannotSendAppointmentMessage => $this->i18N('ERROR_CANNOT_SEND_APPOINTMENT_MESSAGE'),
+			Enums\ErrorCodes::CannotSendAppointmentMessageNoOrganizer => $this->i18N('ERROR_CANNOT_SEND_APPOINTMENT_MESSAGE_NO_ORGANIZER')
+		];
 	}
 
 	/**
