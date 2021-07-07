@@ -148,7 +148,6 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 					$sMethod = 'REPLY';
 					$sSubject = $sSummary;
 
-//						unset($oVEvent->ATTENDEE);
 					$sPartstat = strtoupper($sAction);
 					switch ($sPartstat)
 					{
@@ -184,16 +183,16 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 							$oAttendee['CN'] = $sCN;
 							$oAttendee['PARTSTAT'] = $sPartstat;
 							$oAttendee['RESPONDED-AT'] = gmdate("Ymd\THis\Z");
+							break;
 						}
 					}
+					unset($oVEvent->ATTENDEE);
 
-/*
 					$oVEvent->add('ATTENDEE', 'mailto:'.$sAttendee, array(
 						'CN' => $sCN,
 						'PARTSTAT' => $sPartstat,
 						'RESPONDED-AT' => gmdate("Ymd\THis\Z")
 					));
-*/
 				}
 
 				$oVCal->METHOD = $sMethod;
