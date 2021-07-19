@@ -285,11 +285,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oIcs->Type = $aData['Action'];
 	}
 
-	public function onPopulateVCalendar($aData, &$oVEvent)
+	public function onPopulateVCalendar(&$aData, &$oVEvent)
 	{
 		$sUserPublicId = $aData['sUserPublicId'];
 		$oEvent = $aData['oEvent'];
-		$oVCal = &$oVEvent->parent;
+		$oVCal = &$aData['oVCal'];
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 
 		$aAttendees = [];
