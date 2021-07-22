@@ -75,7 +75,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 		else
 		{
 			$oAttendeeUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sAttendee);
-			if ($oAttendeeUser instanceof \Aurora\Modules\Core\Classes\User)
+			if ($oAttendeeUser instanceof \Aurora\Modules\Core\Models\User)
 			{
 				$bDefaultAccountAsEmail = false;
 				$oDefaultUser = $oAttendeeUser;
@@ -121,81 +121,95 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 		if ($oVCal)
 		{
 			$sMethod = $sMethodOriginal = (string) $oVCal->METHOD;
-			$aVEvents = $oVCal->getBaseComponents('VEVENT');
+			$aVEvents = $oVCal->VEVENT;
 
 			if (isset($aVEvents) && count($aVEvents) > 0)
 			{
-				$oVEvent = $aVEvents[0];
-				$sEventId = (string)$oVEvent->UID;
-				if (isset($oVEvent->SUMMARY))
+				foreach ($aVEvents as $oVEvent)
 				{
-					$sSummary = (string)$oVEvent->SUMMARY;
-				}
-				if (isset($oVEvent->ORGANIZER))
-				{
-					$sTo = str_replace('mailto:', '', strtolower((string)$oVEvent->ORGANIZER));
-					$iPos = strpos($sTo, 'principals/');
-					if ($iPos !== false)
+					// $oVEvent = $aVEvents[0];
+					$sEventId = (string)$oVEvent->UID;
+					if (isset($oVEvent->SUMMARY))
 					{
-						$sTo = \trim(substr($sTo, $iPos + 11), '/');
+						$sSummary = (string)$oVEvent->SUMMARY;
 					}
-				}
-				if (strtoupper($sMethod) === 'REQUEST')
-				{
-					$sMethod = 'REPLY';
-					$sSubject = $sSummary;
-
-//						unset($oVEvent->ATTENDEE);
-					$sPartstat = strtoupper($sAction);
-					switch ($sPartstat)
+					if (isset($oVEvent->ORGANIZER))
 					{
-						case 'ACCEPTED':
-							$sSubject = 'Accepted: '. $sSubject;
-							break;
-						case 'DECLINED':
-							$sSubject = 'Declined: '. $sSubject;
-							break;
-						case 'TENTATIVE':
-							$sSubject = 'Tentative: '. $sSubject;
-							break;
-					}
-
-					$sCN = '';
-					if (isset($oDefaultUser) && $sAttendee ===  $oDefaultUser->PublicId)
-					{
-						if (!empty($oDefaultUser->Name))
+						$sTo = str_replace('mailto:', '', strtolower((string)$oVEvent->ORGANIZER));
+						$iPos = strpos($sTo, 'principals/');
+						if ($iPos !== false)
 						{
-							$sCN = $oDefaultUser->Name;
-						}
-						else
-						{
-							$sCN = $sAttendee;
+							$sTo = \trim(substr($sTo, $iPos + 11), '/');
 						}
 					}
-
-					foreach($oVEvent->ATTENDEE as &$oAttendee)
+					if (strtoupper($sMethodOriginal) === 'REQUEST')
 					{
-						$sEmail = str_replace('mailto:', '', strtolower((string)$oAttendee));
-						if (strtolower($sEmail) === strtolower($sAttendee))
+						$sMethod = 'REPLY';
+						$sSubject = $sSummary;
+
+	//						unset($oVEvent->ATTENDEE);
+						$sPartstat = strtoupper($sAction);
+						switch ($sPartstat)
 						{
-							$oAttendee['CN'] = $sCN;
-							$oAttendee['PARTSTAT'] = $sPartstat;
-							$oAttendee['RESPONDED-AT'] = gmdate("Ymd\THis\Z");
+							case 'ACCEPTED':
+								$sSubject = 'Accepted: '. $sSubject;
+								break;
+							case 'DECLINED':
+								$sSubject = 'Declined: '. $sSubject;
+								break;
+							case 'TENTATIVE':
+								$sSubject = 'Tentative: '. $sSubject;
+								break;
 						}
+
+						$sCN = '';
+						if (isset($oDefaultUser) && $sAttendee ===  $oDefaultUser->PublicId)
+						{
+							if (!empty($oDefaultUser->Name))
+							{
+								$sCN = $oDefaultUser->Name;
+							}
+							else
+							{
+								$sCN = $sAttendee;
+							}
+						}
+						$oAttendee = $oVEvent->ATTENDEE;
+
+						$bFoundAteendee = false;
+						if ($oAttendee)
+						{
+							foreach($oAttendee as &$oAttendee)
+							{
+								$sEmail = str_replace('mailto:', '', strtolower((string)$oAttendee));
+								if (strtolower($sEmail) === strtolower($sAttendee))
+								{
+									$oAttendee['CN'] = $sCN;
+									$oAttendee['PARTSTAT'] = $sPartstat;
+									$oAttendee['RESPONDED-AT'] = gmdate("Ymd\THis\Z");
+
+									$bFoundAteendee = true;
+								}
+							}
+							$oVEvent->ATTENDEE = $oAttendee;
+						}
+	/*
+						$oVEvent->add('ATTENDEE', 'mailto:'.$sAttendee, array(
+							'CN' => $sCN,
+							'PARTSTAT' => $sPartstat,
+							'RESPONDED-AT' => gmdate("Ymd\THis\Z")
+						));
+	*/
 					}
 
-/*
-					$oVEvent->add('ATTENDEE', 'mailto:'.$sAttendee, array(
-						'CN' => $sCN,
-						'PARTSTAT' => $sPartstat,
-						'RESPONDED-AT' => gmdate("Ymd\THis\Z")
-					));
-*/
-				}
+					$oVEvent->{'LAST-MODIFIED'} = new \DateTime('now', new \DateTimeZone('UTC'));
 
+					if (!$bFoundAteendee)
+					{
+						unset($oVEvent);
+					}
+				}
 				$oVCal->METHOD = $sMethod;
-				$oVEvent->{'LAST-MODIFIED'} = new \DateTime('now', new \DateTimeZone('UTC'));
-
 				$sBody = $oVCal->serialize();
 
 				if ($sCalendarId !== false && $bExternal === false && !$bDefaultAccountAsEmail)
