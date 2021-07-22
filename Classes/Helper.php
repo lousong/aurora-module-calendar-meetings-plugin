@@ -35,10 +35,10 @@ class Helper
 	{
 		$oMessage = self::buildAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod, $sHtmlBody, $oAccount);
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
-		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
+		if ($oUser instanceof \Aurora\Modules\Core\Models\User)
 		{
 			$oAccount = $oAccount ? $oAccount : \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountUsedToAuthorize($oUser->PublicId);
-			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
+			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Models\MailAccount)
 			{
 				try
 				{
@@ -78,7 +78,7 @@ class Helper
 		$oMessage = null;
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
 		$sFrom = $oAccount ? $oAccount->Email : $oUser->PublicId;
-		if ($oUser instanceof \Aurora\Modules\Core\Classes\User && !empty($sTo) && !empty($sBody))
+		if ($oUser instanceof \Aurora\Modules\Core\Models\User && !empty($sTo) && !empty($sBody))
 		{
 			$oMessage = \MailSo\Mime\Message::NewInstance();
 			$oMessage->RegenerateMessageId();
@@ -182,10 +182,10 @@ class Helper
 	{
 		$oMessage = self::buildSelfNotificationMessage($sUserPublicId, $sTo, $sSubject, $sHtmlBody);
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
-		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
+		if ($oUser instanceof \Aurora\Modules\Core\Models\User)
 		{
 			$oAccount = \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountUsedToAuthorize($oUser->PublicId);
-			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
+			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Models\MailAccount)
 			{
 				try
 				{
@@ -222,7 +222,7 @@ class Helper
 	{
 		$oMessage = null;
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
-		if ($oUser instanceof \Aurora\Modules\Core\Classes\User && !empty($sTo) && !empty($sHtmlBody))
+		if ($oUser instanceof \Aurora\Modules\Core\Models\User && !empty($sTo) && !empty($sHtmlBody))
 		{
 			$oMessage = \MailSo\Mime\Message::NewInstance();
 			$oMessage->RegenerateMessageId();

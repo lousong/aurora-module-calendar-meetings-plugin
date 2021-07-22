@@ -92,15 +92,12 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 			if ($oMailModule)
 			{
 				$aAccounts = $oMailModule->getAccountsManager()->getUserAccounts($oDefaultUser->Id);
-				if (is_array($aAccounts))
+				foreach ($aAccounts as $oAccount)
 				{
-					foreach ($aAccounts as $oAccount)
+					if ($oAccount instanceof \Aurora\Modules\Mail\Models\MailAccount && $oAccount->Email === $sAttendee)
 					{
-						if ($oAccount instanceof \Aurora\Modules\Mail\Models\MailAccount && $oAccount->Email === $sAttendee)
-						{
-							$oFromAccount = $oAccount;
-							break;
-						}
+						$oFromAccount = $oAccount;
+						break;
 					}
 				}
 			}
@@ -223,7 +220,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 					{
 						throw new \Aurora\Modules\CalendarMeetingsPlugin\Exceptions\Exception(\Aurora\Modules\CalendarMeetingsPlugin\Enums\ErrorCodes::CannotSendAppointmentMessageNoOrganizer);
 					}
-					else if (!empty($sBody) && isset($oDefaultUser) && $oDefaultUser instanceof \Aurora\Modules\Core\Classes\User)
+					else if (!empty($sBody) && isset($oDefaultUser) && $oDefaultUser instanceof \Aurora\Modules\Core\Models\User)
 					{
 						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod, '', $oFromAccount);
 					}
