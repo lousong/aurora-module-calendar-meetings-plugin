@@ -568,7 +568,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 				$aData['sOwnerEmail'] = $sOwnerEmail;
 			}
-			$bIsAppointment = ($oUser instanceof \Aurora\Modules\Core\Classes\User && $sOwnerEmail !== $oUser->PublicId);
+			$bIsAppointment = ($oUser instanceof \Aurora\Modules\Core\Models\User && $sOwnerEmail !== $oUser->PublicId);
 		}
 
 		$aEvent['appointment'] = $bIsAppointment;
