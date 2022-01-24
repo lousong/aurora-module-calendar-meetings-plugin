@@ -397,7 +397,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 						$sStartDateFormat = $oVEvent->DTSTART->hasTime() ? 'D, F d, o, H:i' : 'D, F d, o';
 						$sStartDate = \Aurora\Modules\Calendar\Classes\Helper::getStrDate($oVEvent->DTSTART, $oUser->DefaultTimeZone, $sStartDateFormat);
 
-						$oCalendar = \Aurora\System\Api::GetModule('Calendar')->GetCalendar($sUserPublicId, $oEvent->IdCalendar);
+						$oCalendar = \Aurora\System\Api::GetModule('Calendar')->GetCalendar($oUser->Id, $oEvent->IdCalendar);
 
 						$sHtml = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createHtmlFromEvent($oEvent, $oUser->PublicId, $sAttendee, $oCalendar->DisplayName, $sStartDate);
 
