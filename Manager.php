@@ -152,13 +152,13 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 						switch ($sPartstat)
 						{
 							case 'ACCEPTED':
-								$sSubject = 'Accepted: '. $sSubject;
+								$sSubject = $this->GetModule()->i18N('SUBJECT_PREFFIX_ACCEPTED') . ': '. $sSubject;
 								break;
 							case 'DECLINED':
-								$sSubject = 'Declined: '. $sSubject;
+								$sSubject = $this->GetModule()->i18N('SUBJECT_PREFFIX_DECLINED') . ': '. $sSubject;
 								break;
 							case 'TENTATIVE':
-								$sSubject = 'Tentative: '. $sSubject;
+								$sSubject = $this->GetModule()->i18N('SUBJECT_PREFFIX_TENTATIVE') . ': '. $sSubject;
 								break;
 						}
 
