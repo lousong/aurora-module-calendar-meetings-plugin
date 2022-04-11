@@ -359,7 +359,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 			}
 
-			if (count($oEvent->Attendees) > 0)
+			if (isset($oEvent->Attendees) && count($oEvent->Attendees) > 0)
 			{
 				if (!isset($oVEvent->ORGANIZER))
 				{
