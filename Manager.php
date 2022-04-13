@@ -179,14 +179,14 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 						$bFoundAteendee = false;
 						if ($oAttendee)
 						{
-							foreach($oAttendee as &$oAttendee)
+							foreach($oAttendee as &$oAttendeeItem)
 							{
-								$sEmail = str_replace('mailto:', '', strtolower((string)$oAttendee));
+								$sEmail = str_replace('mailto:', '', strtolower((string)$oAttendeeItem));
 								if (strtolower($sEmail) === strtolower($sAttendee))
 								{
-									$oAttendee['CN'] = $sCN;
-									$oAttendee['PARTSTAT'] = $sPartstat;
-									$oAttendee['RESPONDED-AT'] = gmdate("Ymd\THis\Z");
+									$oAttendeeItem['CN'] = $sCN;
+									$oAttendeeItem['PARTSTAT'] = $sPartstat;
+									$oAttendeeItem['RESPONDED-AT'] = gmdate("Ymd\THis\Z");
 
 									$bFoundAteendee = true;
 								}
