@@ -48,7 +48,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 		]);
 
 		$this->subscribeEvent('Calendar::CreateIcs', array($this, 'onCreateIcs'));
-		$this->subscribeEvent('CalendarMeetingsPlugin::CreateIcs', array($this, 'onCreateIcs'));
 		$this->subscribeEvent('Calendar::populateVCalendar', array($this, 'onPopulateVCalendar'));
 		$this->subscribeEvent('Calendar::DeleteEvent', array($this, 'onDeleteEvent'));
 		$this->subscribeEvent('Calendar::UpdateEventAttendees', array($this, 'onUpdateEventAttendees'));
@@ -57,7 +56,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->subscribeEvent('Calendar::processICS::UpdateEvent', array($this, 'onProcessICSUpdateEvent'));
 		$this->subscribeEvent('Calendar::processICS::Cancel', array($this, 'onProcessICSCancel'));
 		$this->subscribeEvent('Calendar::processICS::AddAttendeesToResult', array($this, 'onAddAttendeesToResult'));
-		$this->subscribeEvent('CalendarMeetingsPlugin::processICS::AddAttendeesToResult', array($this, 'onAddAttendeesToResult'));
 		$this->subscribeEvent('Calendar::parseEvent', array($this, 'onParseEvent'));
 
 		$this->aErrors = [
@@ -90,54 +88,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 
 		return $mResult;
-	}
-
-	/**
-	 * @param int $UserId
-	 * @param string $File
-	 * @param string $FromEmail
-	 * @return boolean
-	 * @throws \Aurora\System\Exceptions\ApiException
-	 */
-	public function GetIcsData($UserId, $File, $FromEmail)
-	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-		$sUserPublicId = \Aurora\System\Api::getUserPublicIdById($UserId);
-
-		if (empty($File) || empty($FromEmail))
-		{
-			throw new \Aurora\System\Exceptions\ApiException(\Aurora\System\Notifications::InvalidInputParameter);
-		}
-		$sData = $this->getCacheManager()->get($sUserPublicId, $File, '', \Aurora\Modules\Calendar\Module::GetName());
-		if (!empty($sData))
-		{
-			$mResult = $this->getManager()->processICS($sUserPublicId, $sData, $FromEmail);
-			if (is_array($mResult) && !empty($mResult['Action']) && !empty($mResult['Body']))
-			{
-				$oIcs = \Aurora\Modules\Calendar\Classes\Ics::createInstance();
-
-				$oIcs->Uid = $mResult['UID'];
-				$oIcs->Sequence = $mResult['Sequence'];
-				$oIcs->File = $File;
-				$oIcs->Type = 'SAVE';
-				$oIcs->Attendee = null;
-				$oIcs->Location = !empty($mResult['Location']) ? $mResult['Location'] : '';
-				$oIcs->Description = !empty($mResult['Description']) ? $mResult['Description'] : '';
-				$oIcs->When = !empty($mResult['When']) ? $mResult['When'] : '';
-				$oIcs->CalendarId = !empty($mResult['CalendarId']) ? $mResult['CalendarId'] : '';
-
-				$oIcs->StartTS = $mResult['StartTS'];
-				$oIcs->EndTS = $mResult['EndTS'];
-
-				$this->broadcastEvent(
-					'CreateIcs',
-					$mResult,
-					$oIcs
-				);
-				return $oIcs;
-			}
-		}
-		return false;
 	}
 
 	/**
