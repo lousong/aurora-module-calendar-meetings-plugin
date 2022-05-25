@@ -186,13 +186,13 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 							break;
 						}
 					}
-					unset($oVEvent->ATTENDEE);
+					// unset($oVEvent->ATTENDEE);
 
-					$oVEvent->add('ATTENDEE', 'mailto:'.$sAttendee, array(
-						'CN' => $sCN,
-						'PARTSTAT' => $sPartstat,
-						'RESPONDED-AT' => gmdate("Ymd\THis\Z")
-					));
+					// $oVEvent->add('ATTENDEE', 'mailto:'.$sAttendee, array(
+					// 	'CN' => $sCN,
+					// 	'PARTSTAT' => $sPartstat,
+					// 	'RESPONDED-AT' => gmdate("Ymd\THis\Z")
+					// ));
 				}
 
 				$oVCal->METHOD = $sMethod;
@@ -205,9 +205,9 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 					unset($oVCal->METHOD);
 					if (isset($oDefaultUser))
 					{
-						if ($sUserPublicId === $sAttendee && strtoupper($sAction) == 'DECLINED' || strtoupper($sMethod) == 'CANCEL')
+						if (strtoupper($sAction) == 'DECLINED' || strtoupper($sMethod) == 'CANCEL')
 						{
-							$this->deleteEvent($oDefaultUser->PublicId, $sCalendarId, $sEventId);
+							$this->deleteEvent($sAttendee, $sCalendarId, $sEventId);
 						}
 						else
 						{
