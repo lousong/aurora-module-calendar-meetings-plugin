@@ -17,6 +17,7 @@ namespace Aurora\Modules\CalendarMeetingsPlugin;
 class Module extends \Aurora\System\Module\AbstractModule
 {
 	protected $oManager = null;
+	protected $oCalendarManager = null;
 	public $oApiFileCache = null;
 //	public $oApiCalendarDecorator = null;
 //	public $oApiUsersManager = null;
@@ -29,6 +30,16 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 
 		return $this->oManager;
+	}
+
+	public function getCalendarManager()
+	{
+		if ($this->oCalendarManager === null)
+		{
+			$this->oCalendarManager = \Aurora\Modules\Calendar\Module::getInstance()->getManager();
+		}
+
+		return $this->oCalendarManager;
 	}
 
 	public function getCacheManager()
@@ -111,7 +122,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sData = $this->getCacheManager()->get($sUserPublicId, $File, '', \Aurora\Modules\Calendar\Module::GetName());
 		if (!empty($sData))
 		{
-			$mResult = $this->getManager()->processICS($sUserPublicId, $sData, $FromEmail);
+			$mResult = $this->getCalendarManager()->processICS($sUserPublicId, $sData, $FromEmail);
 			if (is_array($mResult) && !empty($mResult['Action']) && !empty($mResult['Body']))
 			{
 				$oIcs = \Aurora\Modules\Calendar\Classes\Ics::createInstance();
@@ -119,8 +130,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$oIcs->Uid = $mResult['UID'];
 				$oIcs->Sequence = $mResult['Sequence'];
 				$oIcs->File = $File;
-				$oIcs->Type = 'SAVE';
-				$oIcs->Attendee = null;
+				$oIcs->Type = !empty($mResult['Action']) ? $mResult['Action'] : '';;
+				$oIcs->Attendee = !empty($mResult['Attendee']) ? $mResult['Attendee'] : '';
 				$oIcs->Location = !empty($mResult['Location']) ? $mResult['Location'] : '';
 				$oIcs->Description = !empty($mResult['Description']) ? $mResult['Description'] : '';
 				$oIcs->When = !empty($mResult['When']) ? $mResult['When'] : '';
@@ -282,12 +293,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 							$sResult = strtr($sResult, $mResult);
 
 							$sStartDate = $dt->format($oEvent[0]['allDay'] ? 'D, F d, o' : 'D, F d, o, H:i');
-							\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendSelfNotificationMessage(
-								$aInviteValues['attendee'],
-								$aInviteValues['attendee'],
-								\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createSelfNotificationSubject($aInviteValues['action'], $oEvent[0]['subject']),
-								\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createSelfNotificationHtmlBody($aInviteValues['action'], $oEvent[0], $aInviteValues['attendee'], $oCalendar->DisplayName, $sStartDate)
-							);
+							// \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendSelfNotificationMessage(
+							// 	$aInviteValues['attendee'],
+							// 	$aInviteValues['attendee'],
+							// 	\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createSelfNotificationSubject($aInviteValues['action'], $oEvent[0]['subject']),
+							// 	\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createSelfNotificationHtmlBody($aInviteValues['action'], $oEvent[0], $aInviteValues['attendee'], $oCalendar->DisplayName, $sStartDate)
+							// );
 						}
 						else
 						{
@@ -306,7 +317,18 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$sAttendee = $aInviteValues['attendee'];
 				if (!empty($sAttendee))
 				{
-					$this->getManager()->updateAppointment($sOrganizerPublicId, $aInviteValues['calendarId'], $aInviteValues['eventId'], $sAttendee, $aInviteValues['action']);
+					if (isset($oEvent) && isset($oEvent['vcal']) && $oEvent['vcal'] instanceof \Sabre\VObject\Component\VCalendar)
+					{
+						$oVCal = $oEvent['vcal'];
+						$oVCal->METHOD = 'REQUEST';
+						$sData = $oVCal->serialize();
+						$oAttendeeUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sAttendee);
+						if ($oAttendeeUser) {
+							$sOrganizerPublicId = null;
+						}
+						$this->getManager()->appointmentAction($sOrganizerPublicId, $sAttendee, $sAction, $aInviteValues['calendarId'], $sData);
+					}
+					// $this->getManager()->updateAppointment($sOrganizerPublicId, $aInviteValues['calendarId'], $aInviteValues['eventId'], $sAttendee, $aInviteValues['action']);
 				}
 			}
 		}
