@@ -31,9 +31,9 @@ class Helper
 	 *
 	 * @return \MailSo\Mime\Message
 	 */
-	public static function sendAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod, $sHtmlBody='', $oAccount = null)
+	public static function sendAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod, $sHtmlBody='', $oAccount = null, $sFromEmail = null)
 	{
-		$oMessage = self::buildAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod, $sHtmlBody, $oAccount);
+		$oMessage = self::buildAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod, $sHtmlBody, $oAccount, $sFromEmail);
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
@@ -73,11 +73,15 @@ class Helper
 	 *
 	 * @return \MailSo\Mime\Message
 	 */
-	public static function buildAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod = null, $sHtmlBody = '', $oAccount = null)
+	public static function buildAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod = null, $sHtmlBody = '', $oAccount = null, $sFromEmail = null)
 	{
 		$oMessage = null;
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
-		$sFrom = $oAccount ? $oAccount->Email : $oUser->PublicId;
+		if (isset($sFromEmail)) {
+			$sFrom = $sFromEmail;
+		} else {
+			$sFrom = $oAccount ? $oAccount->Email : $oUser->PublicId;
+		}
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User && !empty($sTo) && !empty($sBody))
 		{
 			$oMessage = \MailSo\Mime\Message::NewInstance();

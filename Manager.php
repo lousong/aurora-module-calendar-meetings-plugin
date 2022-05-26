@@ -209,10 +209,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 						{
 							$this->deleteEvent($sAttendee, $sCalendarId, $sEventId);
 						}
-						else
-						{
-							$this->oStorage->updateEventRaw($oDefaultUser->PublicId, $sCalendarId, $sEventId, $oVCal->serialize());
-						}
+						$this->oStorage->updateEventRaw($oDefaultUser->PublicId, $sCalendarId, $sEventId, $oVCal->serialize());
 					}
 				}
 
@@ -224,7 +221,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 					}
 					else if (!empty($sBody) && isset($oDefaultUser) && $oDefaultUser instanceof \Aurora\Modules\Core\Classes\User)
 					{
-						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod, '', $oFromAccount);
+						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod, '', $oFromAccount, $sAttendee);
 					}
 					else
 					{
