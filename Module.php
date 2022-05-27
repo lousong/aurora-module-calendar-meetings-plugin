@@ -166,7 +166,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 							if (!$oEvent[0]['allDay'])
 							{
 								$sDefaultTimeZone = new \DateTimeZone($oOrganizerUser->DefaultTimeZone);
-								$dt->setTimezone($sDefaultTimeZone);
+								if (!empty($sDefaultTimeZone)) {
+									$dt->setTimezone($sDefaultTimeZone);
+								}
 							}
 
 							$sAction = $aInviteValues['action'];
