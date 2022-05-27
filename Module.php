@@ -140,6 +140,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$oIcs->StartTS = $mResult['StartTS'];
 				$oIcs->EndTS = $mResult['EndTS'];
 
+				$oIcs->AttendeeList = $mResult['AttendeeList'];
+				$oIcs->Organizer = $mResult['Organizer'];
+
 				$this->broadcastEvent(
 					'CreateIcs',
 					$mResult,
