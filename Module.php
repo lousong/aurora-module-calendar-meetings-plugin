@@ -292,7 +292,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 							$sResult = strtr($sResult, $mResult);
 
-							$sStartDate = $dt->format($oEvent[0]['allDay'] ? 'D, F d, o' : 'D, F d, o, H:i');
+							// $sStartDate = $dt->format($oEvent[0]['allDay'] ? 'D, F d, o' : 'D, F d, o, H:i');
 							// \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendSelfNotificationMessage(
 							// 	$aInviteValues['attendee'],
 							// 	$aInviteValues['attendee'],

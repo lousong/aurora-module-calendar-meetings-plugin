@@ -209,7 +209,9 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 						{
 							$this->deleteEvent($sAttendee, $sCalendarId, $sEventId);
 						}
-						$this->oStorage->updateEventRaw($oDefaultUser->PublicId, $sCalendarId, $sEventId, $oVCal->serialize());
+						if ($oDefaultUser->PublicId !== $sAttendee) {
+							$this->oStorage->updateEventRaw($oDefaultUser->PublicId, $sCalendarId, $sEventId, $oVCal->serialize());
+						}
 					}
 				}
 
