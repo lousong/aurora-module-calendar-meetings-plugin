@@ -45,19 +45,15 @@ class Helper
 				$InformatikProjectsModule = Api::GetModule('InformatikProjects');
 				if ($InformatikProjectsModule) {
 					$senderForExternalRecipients = $InformatikProjectsModule->getConfig('SenderForExternalRecipients');
-					$internalDomains = $InformatikProjectsModule->getConfig('InternalDomains', []);
-					if (!empty($senderForExternalRecipients) && !empty($internalDomains)) {
-						$oToEmail = \MailSo\Mime\Email::Parse($sTo);
-						$sToDomain = $oToEmail->getDomain();
-						if (!in_array($sToDomain, $internalDomains)) {
-							$oEmail = \MailSo\Mime\Email::Parse($senderForExternalRecipients);
-							$sFromEmail = $oEmail->GetEmail();
-							$oUser = \Aurora\Modules\Core\Module::Decorator()->GetUserByPublicId($sFromEmail);
-							if ($oUser) {
-								$MailModule = Api::GetModule('Mail');
-								if ($MailModule) {
-									$oFromAccount = $MailModule->getAccountsManager()->getAccountByEmail($sFromEmail, $oUser->Id);
-								}
+					$oToEmail = \MailSo\Mime\Email::Parse($sTo);
+					if (!empty($senderForExternalRecipients) && self::isEmailExternal($oToEmail->GetEmail())) {
+						$oEmail = \MailSo\Mime\Email::Parse($senderForExternalRecipients);
+						$sFromEmail = $oEmail->GetEmail();
+						$oUser = \Aurora\Modules\Core\Module::Decorator()->GetUserByPublicId($sFromEmail);
+						if ($oUser) {
+							$MailModule = Api::GetModule('Mail');
+							if ($MailModule) {
+								$oFromAccount = $MailModule->getAccountsManager()->getAccountByEmail($sFromEmail, $oUser->Id);
 							}
 						}
 					}
@@ -130,6 +126,31 @@ class Helper
 		return $oMessage;
 	}
 
+	protected static function isEmailExternal($email)
+	{
+		$informatikProjectsModule = \Aurora\System\Api::GetModule('InformatikProjects');
+		if ($informatikProjectsModule) {
+			$domain = \MailSo\Base\Utils::GetDomainFromEmail($email);
+			$internalDomains = $informatikProjectsModule->getConfig('InternalDomains', []);
+			return !in_array($domain, $internalDomains);
+		}
+		return false;
+	}
+
+	protected static function getDomainForInvitation($email)
+	{
+		$domainForInvitation = '';
+		$calendarMeetingsPluginModule = \Aurora\System\Api::GetModule('CalendarMeetingsPlugin');
+		if ($calendarMeetingsPluginModule && self::isEmailExternal($email)) {
+			$externalDomainForInvitation = $calendarMeetingsPluginModule->getConfig('ExternalDomainForInvitation', '');
+			$domainForInvitation = rtrim($externalDomainForInvitation);
+		}
+		if (empty($domainForInvitation)) {
+			$domainForInvitation = rtrim(\MailSo\Base\Http::SingletonInstance()->GetFullUrl(), '\\/ ');
+		}
+		return $domainForInvitation;
+	}
+
 	/**
 	 * @param \Aurora\Modules\Calendar\Classes\Event $oEvent
 	 * @param string $sAccountEmail
@@ -156,7 +177,7 @@ class Helper
 		$aValues['action'] = 'DECLINED';
 		$sEncodedValueDecline = \Aurora\System\Api::EncodeKeyValues($aValues);
 
-		$sHref = rtrim(\MailSo\Base\Http::SingletonInstance()->GetFullUrl(), '\\/ ').'/?invite=';
+		$sHref = self::getDomainForInvitation($sAttendee) . '/?invite=';
 		$oCalendarMeetingsModule = \Aurora\System\Api::GetModule('CalendarMeetingsPlugin');
 		if ($oCalendarMeetingsModule instanceof \Aurora\System\Module\AbstractModule)
 		{

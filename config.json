@@ -6,5 +6,9 @@
 	 "AllowAppointments": [
 		true,
 		"bool"
+	],
+	 "ExternalDomainForInvitation": [
+		"",
+		"string"
 	]
 }
