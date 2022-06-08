@@ -7,6 +7,8 @@
 
 namespace Aurora\Modules\CalendarMeetingsPlugin\Classes;
 
+use Aurora\System\Api;
+
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
  * @license https://afterlogic.com/products/common-licensing Afterlogic Software License
@@ -33,30 +35,38 @@ class Helper
 	 */
 	public static function sendAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod, $sHtmlBody='', $oAccount = null, $sFromEmail = null)
 	{
-		$oMessage = self::buildAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod, $sHtmlBody, $oAccount, $sFromEmail);
 		$oUser = \Aurora\System\Api::GetModuleDecorator('Core')->GetUserByPublicId($sUserPublicId);
 		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
 			$oAccount = $oAccount ? $oAccount : \Aurora\System\Api::GetModule('Mail')->getAccountsManager()->getAccountUsedToAuthorize($oUser->PublicId);
-			if ($oMessage && $oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
+			if ($oAccount instanceof \Aurora\Modules\Mail\Classes\Account)
 			{
-				try
-				{
-					\Aurora\System\Api::Log('IcsAppointmentActionSendOriginalMailMessage');
-					return \Aurora\System\Api::GetModule('Mail')->getMailManager()->sendMessage($oAccount, $oMessage);
-				}
-				catch (\Aurora\System\Exceptions\ManagerException $oException)
-				{
-					$iCode = \Core\Notifications::CanNotSendMessage;
-					switch ($oException->getCode())
-					{
-						case Errs::Mail_InvalidRecipients:
-							$iCode = \Core\Notifications::InvalidRecipients;
-							break;
+				$oFromAccount = null;
+				$InformatikProjectsModule = Api::GetModule('InformatikProjects');
+				if ($InformatikProjectsModule) {
+					$senderForExternalRecipients = $InformatikProjectsModule->getConfig('SenderForExternalRecipients');
+					$internalDomains = $InformatikProjectsModule->getConfig('InternalDomains', []);
+					if (!empty($senderForExternalRecipients) && !empty($internalDomains)) {
+						$oToEmail = \MailSo\Mime\Email::Parse($sTo);
+						$sToDomain = $oToEmail->getDomain();
+						if (!in_array($sToDomain, $internalDomains)) {
+							$oEmail = \MailSo\Mime\Email::Parse($senderForExternalRecipients);
+							$sFromEmail = $oEmail->GetEmail();
+							$oUser = \Aurora\Modules\Core\Module::Decorator()->GetUserByPublicId($sFromEmail);
+							if ($oUser) {
+								$MailModule = Api::GetModule('Mail');
+								if ($MailModule) {
+									$oFromAccount = $MailModule->getAccountsManager()->getAccountByEmail($sFromEmail, $oUser->Id);
+								}
+							}
+						}
 					}
-
-					throw new \Aurora\System\Exceptions\ApiException($iCode, $oException);
 				}
+
+				$oMessage = self::buildAppointmentMessage($sUserPublicId, $sTo, $sSubject, $sBody, $sMethod, $sHtmlBody, $oAccount, $sFromEmail);
+
+				\Aurora\System\Api::Log('IcsAppointmentActionSendOriginalMailMessage');
+				return \Aurora\System\Api::GetModule('Mail')->getMailManager()->sendMessage($oAccount, $oMessage, null, '', '', '', [], $oFromAccount);
 			}
 		}
 
