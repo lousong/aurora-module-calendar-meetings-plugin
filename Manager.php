@@ -121,13 +121,11 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 		if ($oVCal)
 		{
 			$sMethod = $sMethodOriginal = (string) $oVCal->METHOD;
-			$aVEvents = $oVCal->VEVENT;
 
-			if (isset($aVEvents) && count($aVEvents) > 0)
+			if (isset($oVCal->VEVENT) && count($oVCal->VEVENT) > 0)
 			{
-				foreach ($aVEvents as $oVEvent)
+				foreach ($oVCal->VEVENT as $oVEvent)
 				{
-					// $oVEvent = $aVEvents[0];
 					$sEventId = (string)$oVEvent->UID;
 					if (isset($oVEvent->SUMMARY))
 					{
@@ -147,7 +145,6 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 						$sMethod = 'REPLY';
 						$sSubject = $sSummary;
 
-	//						unset($oVEvent->ATTENDEE);
 						$sPartstat = strtoupper($sAction);
 						switch ($sPartstat)
 						{
@@ -174,12 +171,11 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 								$sCN = $sAttendee;
 							}
 						}
-						$oAttendee = $oVEvent->ATTENDEE;
 
 						$bFoundAteendee = false;
-						if ($oAttendee)
+						if ($oVEvent->ATTENDEE)
 						{
-							foreach($oAttendee as &$oAttendeeItem)
+							foreach($oVEvent->ATTENDEE as &$oAttendeeItem)
 							{
 								$sEmail = str_replace('mailto:', '', strtolower((string)$oAttendeeItem));
 								if (strtolower($sEmail) === strtolower($sAttendee))
@@ -191,15 +187,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 									$bFoundAteendee = true;
 								}
 							}
-							$oVEvent->ATTENDEE = $oAttendee;
 						}
-	/*
-						$oVEvent->add('ATTENDEE', 'mailto:'.$sAttendee, array(
-							'CN' => $sCN,
-							'PARTSTAT' => $sPartstat,
-							'RESPONDED-AT' => gmdate("Ymd\THis\Z")
-						));
-	*/
 					}
 
 					$oVEvent->{'LAST-MODIFIED'} = new \DateTime('now', new \DateTimeZone('UTC'));
@@ -217,9 +205,9 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 					unset($oVCal->METHOD);
 					if (isset($oDefaultUser))
 					{
-						if ($sUserPublicId === $sAttendee && strtoupper($sAction) == 'DECLINED' || strtoupper($sMethod) == 'CANCEL')
+						if (strtoupper($sAction) == 'DECLINED' || strtoupper($sMethod) == 'CANCEL')
 						{
-							$this->deleteEvent($oDefaultUser->PublicId, $sCalendarId, $sEventId);
+							$this->deleteEvent($sAttendee, $sCalendarId, $sEventId);
 						}
 						else
 						{
@@ -236,7 +224,7 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 					}
 					else if (!empty($sBody) && isset($oDefaultUser) && $oDefaultUser instanceof \Aurora\Modules\Core\Models\User)
 					{
-						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod, '', $oFromAccount);
+						$bResult = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($oDefaultUser->PublicId, $sTo, $sSubject, $sBody, $sMethod, '', $oFromAccount, $sAttendee);
 					}
 					else
 					{
