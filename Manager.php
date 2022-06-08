@@ -208,8 +208,8 @@ class Manager extends \Aurora\Modules\Calendar\Manager
 						if (strtoupper($sAction) == 'DECLINED' || strtoupper($sMethod) == 'CANCEL')
 						{
 							$this->deleteEvent($sAttendee, $sCalendarId, $sEventId);
-						}
-						if ($oDefaultUser->PublicId !== $sAttendee) {
+						} else {
+//						if ($oDefaultUser->PublicId !== $sAttendee) {
 							$this->oStorage->updateEventRaw($oDefaultUser->PublicId, $sCalendarId, $sEventId, $oVCal->serialize());
 						}
 					}
