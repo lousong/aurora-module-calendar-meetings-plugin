@@ -493,6 +493,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oVEvent = $aData['oVEvent'];
 		$mFromEmail = $aData['mFromEmail'];
 
+		$sType = $sMethod;
 		if (isset($oVEvent->ATTENDEE) && $sequenceServer >= $sequence)
 		{
 			foreach ($oVEvent->ATTENDEE as $oAttendee)
@@ -512,6 +513,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 						if (isset($oCurrentAttendee['PARTSTAT']))
 						{
 							$oAttendeeResult['PARTSTAT'] = $oCurrentAttendee['PARTSTAT']->getValue();
+							$sType = $sType . '-' . (string) $oAttendeeResult['PARTSTAT'];
 							$oRespondedAt = $oVEvent->{'LAST-MODIFIED'}->getDateTime();
 							$oRespondedAt->setTimezone(new \DateTimeZone('UTC'));
 							$oAttendeeResult['RESPONDED-AT'] = gmdate("Ymd\THis\Z", $oRespondedAt->getTimestamp());
@@ -524,6 +526,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 		unset($oVCalResult->METHOD);
 		$oVEventResult->{'LAST-MODIFIED'} = new \DateTime('now', new \DateTimeZone('UTC'));
 		$mResult = $this->getManager()->updateEventRaw($sUserPublicId, $sCalendarId, $sEventId, $oVCalResult->serialize());
+		if ($mResult) {
+			$mResult = $sType;
+		}
 		$oVCalResult->METHOD = $sMethod;
 	}
 
