@@ -585,6 +585,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 					$sOwnerEmail = \trim(substr($sOwnerEmail, $iPos + 11), '/');
 				}
 				$aData['sOwnerEmail'] = $sOwnerEmail;
+				$aEvent['organizer'] = $sOwnerEmail;
+				$aEvent['organizerName'] = isset($oVComponent->ORGANIZER['CN']) ? (string)$oVComponent->ORGANIZER['CN'] : '';
 			}
 			$bIsAppointment = ($oUser instanceof \Aurora\Modules\Core\Models\User && $sOwnerEmail !== $oUser->PublicId);
 		}
