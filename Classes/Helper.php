@@ -43,7 +43,19 @@ class Helper
 				try
 				{
 					\Aurora\System\Api::Log('IcsAppointmentActionSendOriginalMailMessage');
-					return \Aurora\System\Api::GetModule('Mail')->getMailManager()->sendMessage($oAccount, $oMessage);
+					if (\Aurora\System\Api::GetModule('Mail')->getMailManager()->sendMessage($oAccount, $oMessage)) {
+						$aCollection = $oMessage->GetRcpt();
+
+						$aEmails = [];
+						$aCollection->ForeachList(function ($oEmail) use (&$aEmails) {
+							$aEmails[strtolower($oEmail->GetEmail())] = trim($oEmail->GetDisplayName());
+						});
+		
+						if (\is_array($aEmails)) {
+							$aArgs = ['IdUser' => $oAccount->IdUser, 'Emails' => $aEmails];
+							\Aurora\System\Api::GetModule('Mail')->broadcastEvent('AfterUseEmails', $aArgs);
+						}
+					}
 				}
 				catch (\Aurora\System\Exceptions\ManagerException $oException)
 				{
