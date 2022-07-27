@@ -7,6 +7,8 @@
 
 namespace Aurora\Modules\CalendarMeetingsPlugin\Classes;
 
+use Aurora\Modules\Mail\Module as MailModule;
+
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
  * @license https://afterlogic.com/products/common-licensing Afterlogic Software License
@@ -43,7 +45,7 @@ class Helper
 				try
 				{
 					\Aurora\System\Api::Log('IcsAppointmentActionSendOriginalMailMessage');
-					if (\Aurora\System\Api::GetModule('Mail')->getMailManager()->sendMessage($oAccount, $oMessage)) {
+					if (MailModule::getInstance()->getMailManager()->sendMessage($oAccount, $oMessage)) {
 						$aCollection = $oMessage->GetRcpt();
 
 						$aEmails = [];
@@ -52,22 +54,19 @@ class Helper
 						});
 		
 						if (\is_array($aEmails)) {
-							$aArgs = ['IdUser' => $oAccount->IdUser, 'Emails' => $aEmails];
+							$aArgs = [
+								'IdUser' => $oAccount->IdUser, 
+								'Emails' => $aEmails
+							];
 							\Aurora\System\Api::GetModule('Mail')->broadcastEvent('AfterUseEmails', $aArgs);
 						}
+
+						return true;
 					}
 				}
 				catch (\Aurora\System\Exceptions\ManagerException $oException)
 				{
-					$iCode = \Core\Notifications::CanNotSendMessage;
-					switch ($oException->getCode())
-					{
-						case Errs::Mail_InvalidRecipients:
-							$iCode = \Core\Notifications::InvalidRecipients;
-							break;
-					}
-
-					throw new \Aurora\System\Exceptions\ApiException($iCode, $oException);
+					throw new \Aurora\System\Exceptions\ApiException($oException->getCode(), $oException);
 				}
 			}
 		}
