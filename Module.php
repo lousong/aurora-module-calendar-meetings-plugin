@@ -7,6 +7,9 @@
 
 namespace Aurora\Modules\CalendarMeetingsPlugin;
 
+use Aurora\System\Api;
+use Aurora\System\Enums\UserRole;
+
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
  * @license https://afterlogic.com/products/common-licensing Afterlogic Software License
@@ -365,6 +368,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$sUserPublicId = $aData['sUserPublicId'];
 		$oEvent = $aData['oEvent'];
+		$sHtml = isset($aData['appointmentMailBody']) ? $aData['appointmentMailBody'] : null;
 		$oVCal = &$oVEvent->parent;
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 
@@ -475,7 +479,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 						$oCalendar = \Aurora\System\Api::GetModule('Calendar')->GetCalendar($sUserPublicId, $oEvent->IdCalendar);
 
-						$sHtml = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createHtmlFromEvent($oEvent, $oUser->PublicId, $sAttendee, $oCalendar->DisplayName, $sStartDate);
+						if (!isset($sHtml)) {
+							$sHtml = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createHtmlFromEvent($oEvent->IdCalendar, $oEvent->Id, $oEvent->Location, $oEvent->Description, $oUser->PublicId, $sAttendee, $oCalendar->DisplayName, $sStartDate);
+						}
 
 						$oVCal->METHOD = 'REQUEST';
 						\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($sUserPublicId, $sAttendee, (string)$oVEvent->SUMMARY, $oVCal->serialize(), (string)$oVCal->METHOD, $sHtml);
@@ -649,5 +655,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$aEvent['appointment'] = $bIsAppointment;
 		$aEvent['appointmentAccess'] = 0;
+	}
+
+	public function GetMailMessageBodyForEvent($CalendarId, $EventId, $Location, $Description, $Attendee, $CalendarDisplayName, $StartDate) 
+	{
+		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
+		$oUser = Api::getAuthenticatedUser();
+
+		return \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createHtmlFromEvent($CalendarId, $EventId, $Location, $Description, $oUser->PublicId, $Attendee, $CalendarDisplayName, $StartDate);
 	}
 }
