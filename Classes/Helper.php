@@ -126,7 +126,7 @@ class Helper
 		return $oMessage;
 	}
 
-	protected static function isEmailExternal($email)
+	public static function isEmailExternal($email)
 	{
 		$informatikProjectsModule = \Aurora\System\Api::GetModule('InformatikProjects');
 		if ($informatikProjectsModule) {

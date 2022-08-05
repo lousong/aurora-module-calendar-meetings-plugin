@@ -7,6 +7,11 @@
 
 namespace Aurora\Modules\CalendarMeetingsPlugin;
 
+use Aurora\Modules\Calendar\Classes\Helper;
+use Aurora\Modules\Calendar\Classes\Ics;
+use Aurora\Modules\Calendar\Classes\Parser;
+use Aurora\Modules\Calendar\Enums\AttendeeStatus;
+use Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper as MeetingsHelper;
 use Aurora\System\Api;
 use Aurora\System\Enums\UserRole;
 
@@ -128,7 +133,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$mResult = $this->getCalendarManager()->processICS($sUserPublicId, $sData, $FromEmail);
 			if (is_array($mResult) && !empty($mResult['Action']) && !empty($mResult['Body']))
 			{
-				$oIcs = \Aurora\Modules\Calendar\Classes\Ics::createInstance();
+				$oIcs = Ics::createInstance();
 
 				$oIcs->Uid = $mResult['UID'];
 				$oIcs->Sequence = $mResult['Sequence'];
@@ -364,47 +369,44 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oIcs->Type = $aData['Action'];
 	}
 
-	public function onPopulateVCalendar($aData, &$oVEvent)
+	public function onPopulateVCalendar(&$aData, &$oVEvent)
 	{
-		$sUserPublicId = $aData['sUserPublicId'];
-		$oEvent = $aData['oEvent'];
+		$sUserPublicId = $aData['UserPublicId'];
+		$oEvent = $aData['Event'];
 		$sHtml = isset($aData['appointmentMailBody']) ? $aData['appointmentMailBody'] : null;
-		$oVCal = &$oVEvent->parent;
+		$oVCal = $aData['VCal'];
+		$sComponentName = $aData['ComponentName'];
+		$sComponentIndex = $aData['ComponentIndex'];
+		$oVEvent = $oVCal->$sComponentName[$sComponentIndex];
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
 
 		$aAttendees = [];
 		$aAttendeeEmails = [];
 		$aObjAttendees = [];
-		if (isset($oVEvent->ORGANIZER))
-		{
+		if (isset($oVEvent->ORGANIZER)) {
 			$sOwnerEmail = str_replace('mailto:', '', strtolower((string) $oVEvent->ORGANIZER));
 			$iPos = strpos($sOwnerEmail, 'principals/');
-			if ($iPos !== false)
-			{
+			if ($iPos !== false) {
 				$sOwnerEmail = \trim(substr($sOwnerEmail, $iPos + 11), '/');
 			}
 		}
 		//update only own attendees
-		if (!isset($sOwnerEmail) || isset($sOwnerEmail) && $sOwnerEmail === $sUserPublicId)
-		{
-			if (isset($oVEvent->ATTENDEE))
-			{
+		if (!isset($sOwnerEmail) || isset($sOwnerEmail) && $sOwnerEmail === $sUserPublicId) {
+			if (isset($oVEvent->ATTENDEE)) {
 				$aAttendeeEmails = [];
-				foreach ($oEvent->Attendees as $aItem)
-				{
+				foreach ($oEvent->Attendees as $aItem) {
 					$sStatus = '';
-					switch ($aItem['status'])
-					{
-						case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Accepted:
+					switch ($aItem['status']) {
+						case AttendeeStatus::Accepted:
 							$sStatus = 'ACCEPTED';
 							break;
-						case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Declined:
+						case AttendeeStatus::Declined:
 							$sStatus = 'DECLINED';
 							break;
-						case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Tentative:
+						case AttendeeStatus::Tentative:
 							$sStatus = 'TENTATIVE';
 							break;
-						case \Aurora\Modules\Calendar\Enums\AttendeeStatus::Unknown:
+						case AttendeeStatus::Unknown:
 							$sStatus = 'NEEDS-ACTION';
 							break;
 					}
@@ -414,41 +416,29 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 				$aObjAttendees = $oVEvent->ATTENDEE;
 				unset($oVEvent->ATTENDEE);
-				foreach($aObjAttendees as $oAttendee)
-				{
+				foreach($aObjAttendees as $oAttendee) {
 					$sAttendee = str_replace('mailto:', '', strtolower((string)$oAttendee));
 					$oPartstat = $oAttendee->offsetGet('PARTSTAT');
-					if (in_array($sAttendee, array_keys($aAttendeeEmails)))
-					{
-						if (isset($oPartstat) && (string)$oPartstat === $aAttendeeEmails[$sAttendee])
-						{
+					if (in_array($sAttendee, array_keys($aAttendeeEmails))) {
+						if (isset($oPartstat) && (string) $oPartstat === $aAttendeeEmails[$sAttendee]) {
 							$oVEvent->add($oAttendee);
 							$aAttendees[] = $sAttendee;
 						}
-					}
-					else
-					{
-						if (!isset($oPartstat) || (isset($oPartstat) && (string)$oPartstat != 'DECLINED'))
-						{
-							$oVCal->METHOD = 'CANCEL';
-							$sSubject = (string)$oVEvent->SUMMARY . ': Canceled';
-							\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($sUserPublicId, $sAttendee, $sSubject, $oVCal->serialize(), (string)$oVCal->METHOD);
-							unset($oVCal->METHOD);
-						}
+					} elseif (!isset($oPartstat) || (isset($oPartstat) && (string)$oPartstat != 'DECLINED')) {
+						$oVCal->METHOD = 'CANCEL';
+						$sSubject = (string)$oVEvent->SUMMARY . ': Canceled';
+						MeetingsHelper::sendAppointmentMessage($sUserPublicId, $sAttendee, $sSubject, $oVCal->serialize(), (string)$oVCal->METHOD);
+						unset($oVCal->METHOD);
 					}
 				}
 			}
 
-			if (is_array($oEvent->Attendees) && count($oEvent->Attendees) > 0)
-			{
-				if (!isset($oVEvent->ORGANIZER))
-				{
+			if (is_array($oEvent->Attendees) && count($oEvent->Attendees) > 0) {
+				if (!isset($oVEvent->ORGANIZER)) {
 					$oVEvent->ORGANIZER = 'mailto:' . $oUser->PublicId;
 				}
-				foreach($oEvent->Attendees as $oAttendee)
-				{
-					if (!in_array($oAttendee['email'], $aAttendees))
-					{
+				foreach($oEvent->Attendees as $oAttendee) {
+					if (!in_array($oAttendee['email'], $aAttendees)) {
 						$oVEvent->add(
 							'ATTENDEE',
 							'mailto:' . $oAttendee['email'],
@@ -459,33 +449,63 @@ class Module extends \Aurora\System\Module\AbstractModule
 						);
 					}
 				}
-			}
-			else
-			{
+			} else {
 				unset($oVEvent->ORGANIZER);
 			}
 
-			if (isset($oVEvent->ATTENDEE))
-			{
-				foreach($oVEvent->ATTENDEE as $oAttendee)
-				{
+			$oVCalResult = clone $oVCal;
+			$oVEventResult = $oVCalResult->$sComponentName[$sComponentIndex];
+
+			if (isset($oVEventResult->ATTENDEE)) {
+				foreach($oVEventResult->ATTENDEE as $oAttendee) {
 					$sAttendee = str_replace('mailto:', '', strtolower((string)$oAttendee));
 
 					if (($sAttendee !==  $oUser->PublicId) &&
-						(!isset($oAttendee['PARTSTAT']) || (isset($oAttendee['PARTSTAT']) && (string)$oAttendee['PARTSTAT'] !== 'DECLINED')))
-					{
-						$sStartDateFormat = $oVEvent->DTSTART->hasTime() ? 'D, F d, o, H:i' : 'D, F d, o';
-						$sStartDate = \Aurora\Modules\Calendar\Classes\Helper::getStrDate($oVEvent->DTSTART, $oUser->DefaultTimeZone, $sStartDateFormat);
+						(!isset($oAttendee['PARTSTAT']) || 
+						(isset($oAttendee['PARTSTAT']) && (string)$oAttendee['PARTSTAT'] !== 'DECLINED'))) {
+						$sStartDateFormat = $oVEventResult->DTSTART->hasTime() ? 'D, F d, o, H:i' : 'D, F d, o';
+						$sStartDate = Helper::getStrDate($oVEventResult->DTSTART, $oUser->DefaultTimeZone, $sStartDateFormat);
 
-						$oCalendar = \Aurora\System\Api::GetModule('Calendar')->GetCalendar($sUserPublicId, $oEvent->IdCalendar);
+						$oCalendar =  Api::GetModule('Calendar')->GetCalendar($sUserPublicId, $oEvent->IdCalendar);
 
 						if (!isset($sHtml)) {
-							$sHtml = \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createHtmlFromEvent($oEvent->IdCalendar, $oEvent->Id, $oEvent->Location, $oEvent->Description, $oUser->PublicId, $sAttendee, $oCalendar->DisplayName, $sStartDate);
+							$sHtml = MeetingsHelper::createHtmlFromEvent(
+								$oEvent->IdCalendar, 
+								$oVEventResult->Id, 
+								$oVEventResult->Location, 
+								$oVEventResult->Description, 
+								$oUser->PublicId, 
+								$sAttendee, 
+								$oCalendar->DisplayName, 
+								$sStartDate
+							);
 						}
 
-						$oVCal->METHOD = 'REQUEST';
-						\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($sUserPublicId, $sAttendee, (string)$oVEvent->SUMMARY, $oVCal->serialize(), (string)$oVCal->METHOD, $sHtml);
-						unset($oVCal->METHOD);
+						if (MeetingsHelper::isEmailExternal($sAttendee)) {
+							$oVEventAteendeeResult = $oVEventResult->ATTENDEE;
+							unset($oVEventResult->ATTENDEE);
+							foreach ($oVEventAteendeeResult as $oAttendeeResult) {
+								$sAttendeeResult = str_replace('mailto:', '', strtolower((string)$oAttendeeResult));
+								if (!MeetingsHelper::isEmailExternal($sAttendeeResult)) {
+									$oAttendeeResult->setValue('mailto:' . \MailSo\Base\Utils::GetAccountNameFromEmail($sAttendeeResult) . '@internal');
+									if (isset($oAttendeeResult['CN'])) {
+										$oAttendeeResult['CN'] = \MailSo\Base\Utils::GetAccountNameFromEmail($oAttendeeResult['CN']);
+									}
+								}
+								$oVEventResult->add($oAttendeeResult);
+							}
+						}
+
+						$oVCalResult->METHOD = 'REQUEST';
+
+						MeetingsHelper::sendAppointmentMessage(
+							$sUserPublicId, 
+							$sAttendee, 
+							(string) $oVCalResult->SUMMARY, 
+							$oVCalResult->serialize(), 
+							(string) $oVCalResult->METHOD, 
+							$sHtml
+						);
 					}
 				}
 			}
@@ -496,7 +516,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$sUserPublicId = $aData['sUserPublicId'];
 
-		$iIndex = \Aurora\Modules\Calendar\Classes\Helper::getBaseVComponentIndex($oVCal->VEVENT);
+		$iIndex = Helper::getBaseVComponentIndex($oVCal->VEVENT);
 		if ($iIndex !== false)
 		{
 			$oVEvent = $oVCal->VEVENT[$iIndex];
@@ -515,7 +535,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				{
 					$oDateTimeNow = new \DateTimeImmutable("now");
 					$oDateTimeEvent = $oVEvent->DTSTART->getDateTime();
-					$oDateTimeRepeat = \Aurora\Modules\Calendar\Classes\Helper::getNextRepeat($oDateTimeNow, $oVEvent);
+					$oDateTimeRepeat = Helper::getNextRepeat($oDateTimeNow, $oVEvent);
 					$bRrule = isset($oVEvent->RRULE);
 					$bEventFore = $oDateTimeEvent ? $oDateTimeEvent > $oDateTimeNow : false;
 					$bNextRepeatFore = $oDateTimeRepeat ? $oDateTimeRepeat > $oDateTimeNow : false;
@@ -529,7 +549,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 							$oVCal->METHOD = 'CANCEL';
 							$sSubject = (string)$oVEvent->SUMMARY . ': Canceled';
 
-							\Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::sendAppointmentMessage($sUserPublicId, $sEmail, $sSubject, $oVCal->serialize(), 'REQUEST');
+							MeetingsHelper::sendAppointmentMessage($sUserPublicId, $sEmail, $sSubject, $oVCal->serialize(), 'REQUEST');
 							unset($oVCal->METHOD);
 						}
 					}
@@ -638,7 +658,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$aEvent['attendees'] = array();
 		if (isset($oVComponent->ATTENDEE))
 		{
-			$aEvent['attendees'] = \Aurora\Modules\Calendar\Classes\Parser::parseAttendees($oVComponent);
+			$aEvent['attendees'] = Parser::parseAttendees($oVComponent);
 
 			if (isset($oVComponent->ORGANIZER))
 			{
@@ -662,6 +682,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 		$oUser = Api::getAuthenticatedUser();
 
-		return \Aurora\Modules\CalendarMeetingsPlugin\Classes\Helper::createHtmlFromEvent($CalendarId, $EventId, $Location, $Description, $oUser->PublicId, $Attendee, $CalendarDisplayName, $StartDate);
+		return MeetingsHelper::createHtmlFromEvent($CalendarId, $EventId, $Location, $Description, $oUser->PublicId, $Attendee, $CalendarDisplayName, $StartDate);
 	}
 }
