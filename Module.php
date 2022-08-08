@@ -505,7 +505,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 						MeetingsHelper::sendAppointmentMessage(
 							$sUserPublicId, 
 							$sAttendee, 
-							(string) $oVCalResult->SUMMARY, 
+							(string) $oVEventResult->SUMMARY, 
 							$oVCalResult->serialize(), 
 							(string) $oVCalResult->METHOD, 
 							$sHtml
