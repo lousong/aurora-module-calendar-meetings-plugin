@@ -487,7 +487,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 							foreach ($oVEventAteendeeResult as $oAttendeeResult) {
 								$sAttendeeResult = str_replace('mailto:', '', strtolower((string)$oAttendeeResult));
 								if (!MeetingsHelper::isEmailExternal($sAttendeeResult)) {
-									$oAttendeeResult->setValue('mailto:' . \MailSo\Base\Utils::GetAccountNameFromEmail($sAttendeeResult) . '@internal');
+									$sDomainNameForReplacementInInvitations = $this->getConfig('DomainNameForReplacementInInvitations', '');
+									if (!empty($sDomainNameForReplacementInInvitations)) {
+										$sDomainNameForReplacementInInvitations = '@' . $sDomainNameForReplacementInInvitations;
+									}
+									$oAttendeeResult->setValue('mailto:' . \MailSo\Base\Utils::GetAccountNameFromEmail($sAttendeeResult) . $sDomainNameForReplacementInInvitations);
 									if (isset($oAttendeeResult['CN'])) {
 										$oAttendeeResult['CN'] = \MailSo\Base\Utils::GetAccountNameFromEmail($oAttendeeResult['CN']);
 									}
