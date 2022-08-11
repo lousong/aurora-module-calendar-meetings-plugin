@@ -140,14 +140,14 @@ class Helper
 	 *
 	 * @return string
 	 */
-	public static function createHtmlFromEvent($oEvent, $sAccountEmail, $sAttendee, $sCalendarName, $sStartDate)
+	public static function createHtmlFromEvent($calendarId, $eventId, $sAccountEmail, $sAttendee, $sCalendarName, $sStartDate, $location, $description)
 	{
 		$sHtml = '';
 		$aValues = array(
 			'attendee' => $sAttendee,
 			'organizer' => $sAccountEmail,
-			'calendarId' => $oEvent->IdCalendar,
-			'eventId' => $oEvent->Id
+			'calendarId' => $calendarId,
+			'eventId' => $eventId
 		);
 
 		$aValues['action'] = 'ACCEPTED';
@@ -171,9 +171,9 @@ class Helper
 				'{{INVITE/TENTATIVE}}'	=> $oCalendarMeetingsModule->i18N('TENTATIVE'),
 				'{{INVITE/DECLINE}}'		=> $oCalendarMeetingsModule->i18N('DECLINE'),
 				'{{Calendar}}'			=> $sCalendarName.' '.$sAccountEmail,
-				'{{Location}}'			=> $oEvent->Location,
+				'{{Location}}'			=> $location,
 				'{{Start}}'				=> $sStartDate,
-				'{{Description}}'			=> $oEvent->Description,
+				'{{Description}}'			=> $description,
 				'{{HrefAccept}}'			=> $sHref.$sEncodedValueAccept,
 				'{{HrefTentative}}'		=> $sHref.$sEncodedValueTentative,
 				'{{HrefDecline}}'			=> $sHref.$sEncodedValueDecline
